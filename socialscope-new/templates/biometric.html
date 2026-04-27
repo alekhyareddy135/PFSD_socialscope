@@ -1,0 +1,916 @@
+{% extends "base.html" %}
+{% block title %}Biometric Mood Analysis{% endblock %}
+{% block head %}
+<!-- face-api.js for in-browser face emotion detection — loaded synchronously so it's ready before our scripts run -->
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+{% endblock %}
+{% block content %}
+
+<div class="page-hero">
+  <div class="container page-hero-content">
+    <div class="overline">AI Biometric Engine</div>
+    <h1>Mood <span style="color:var(--purple);">Detection</span></h1>
+    <p>Two powerful AI tools to detect your emotional state — speak a voice message or look into your camera, and our engine will classify your mood as <span style="color:var(--green);">Positive</span>, <span style="color:var(--red);">Negative</span>, or <span style="color:var(--amber);">Neutral</span>. All results are stored to MongoDB.</p>
+  </div>
+</div>
+
+<div class="container" style="padding-bottom:90px;">
+
+  <!-- ══════════════ TWO CARDS ROW ══════════════ -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-bottom:36px;">
+
+    <!-- ── VOICE CARD ── -->
+    <div class="bio-card" id="voiceCard">
+      <div class="bio-card-header">
+        <div class="bio-icon" style="background:rgba(0,245,212,.12);color:var(--cyan);">🎙️</div>
+        <div>
+          <div class="bio-title">Voice Mood Analysis</div>
+          <div class="bio-sub">Speak → Speech-to-Text → Sentiment NLP</div>
+        </div>
+      </div>
+
+      <!-- Status pill -->
+      <div id="voiceStatus" class="bio-status neutral">Ready to record</div>
+
+      <!-- Waveform visualizer -->
+      <div class="waveform-wrap" id="waveformWrap">
+        <canvas id="waveformCanvas" width="400" height="80"></canvas>
+        <div class="waveform-idle" id="waveformIdle">🎙️ Press record to begin</div>
+      </div>
+
+      <!-- Transcript -->
+      <div class="transcript-box" id="transcriptBox" style="display:none;">
+        <div class="transcript-label">Transcribed Speech</div>
+        <div id="transcriptText" class="transcript-text"></div>
+      </div>
+
+      <!-- Controls -->
+      <div style="display:flex;gap:10px;margin-top:18px;">
+        <button id="recordBtn" class="btn btn-cyan" style="flex:1;justify-content:center;" onclick="toggleRecord()">
+          🎙️ Start Recording
+        </button>
+        <button class="btn btn-ghost" onclick="clearVoice()" style="padding:12px 16px;">✕</button>
+      </div>
+
+      <!-- Result -->
+      <div class="bio-result" id="voiceResult" style="display:none;"></div>
+
+      <!-- History -->
+      <div class="bio-history" id="voiceHistory">
+        <div class="bio-history-title">Recent Voice Analyses</div>
+        <div id="voiceHistoryList"><p style="color:var(--text3);font-size:13px;">No analyses yet.</p></div>
+      </div>
+    </div>
+
+    <!-- ── FACE CARD ── -->
+    <div class="bio-card" id="faceCard">
+      <div class="bio-card-header">
+        <div class="bio-icon" style="background:rgba(123,47,255,.15);color:var(--purple);">👁️</div>
+        <div>
+          <div class="bio-title">Face Emotion Recognition</div>
+          <div class="bio-sub">Webcam → face-api.js → Mood Classification</div>
+        </div>
+      </div>
+
+      <!-- Status pill -->
+      <div id="faceStatus" class="bio-status neutral">Camera not started</div>
+
+      <!-- Video + canvas overlay -->
+      <div class="face-viewport">
+        <video id="faceVideo" autoplay muted playsinline></video>
+        <canvas id="faceOverlay"></canvas>
+        <div class="face-idle" id="faceIdle">
+          <span style="font-size:40px;">👁️</span>
+          <p>Click "Start Camera" to begin real-time emotion detection</p>
+        </div>
+        <!-- Scanning animation -->
+        <div class="scan-line" id="scanLine" style="display:none;"></div>
+        <!-- Emotion label overlay -->
+        <div class="face-emotion-badge" id="emotionBadge" style="display:none;"></div>
+      </div>
+
+      <!-- Loading models -->
+      <div id="modelLoading" class="model-loader" style="display:none;">
+        <div class="loading-spinner"></div>
+        <span>Loading AI face models…</span>
+      </div>
+
+      <!-- Controls -->
+      <div style="display:flex;gap:10px;margin-top:14px;">
+        <button id="cameraBtn" class="btn" style="flex:1;justify-content:center;background:rgba(123,47,255,.2);color:var(--purple);border:1px solid rgba(123,47,255,.3);" onclick="toggleCamera()">
+          📷 Start Camera
+        </button>
+        <button id="captureBtn" class="btn btn-ghost" onclick="captureEmotion()" disabled style="padding:12px 16px;">📸 Capture</button>
+      </div>
+      <p style="font-size:11px;color:var(--text3);margin-top:8px;text-align:center;">Your camera feed is processed locally — no video is sent to the server.</p>
+
+      <!-- Result -->
+      <div class="bio-result" id="faceResult" style="display:none;"></div>
+
+      <!-- History -->
+      <div class="bio-history" id="faceHistoryWrap">
+        <div class="bio-history-title">Recent Face Analyses</div>
+        <div id="faceHistoryList"><p style="color:var(--text3);font-size:13px;">No analyses yet.</p></div>
+      </div>
+    </div>
+
+  </div><!-- end grid -->
+
+  <!-- ══════════════ HOW IT WORKS ══════════════ -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:32px;">
+    <div style="font-size:20px;font-weight:700;font-family:var(--font-display);color:var(--text);margin-bottom:24px;text-align:center;">How the Biometric Engine Works</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;">🎙️ Voice Pipeline</div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          {% for n,t,d in [
+            ('1','Web Speech API','Browser-native speech recognition converts your voice to text in real-time.'),
+            ('2','NLP Sentiment Engine','The transcribed text is run through the same 150+ word sentiment lexicon as the text analyzer.'),
+            ('3','Score & Label','A normalized score (-1 to +1) determines Positive, Negative or Neutral mood.'),
+            ('4','MongoDB Storage','Result is saved to the voice_analyses collection with timestamp and sentiment breakdown.'),
+          ] %}
+          <div style="display:flex;gap:12px;">
+            <div style="width:24px;height:24px;border-radius:50%;background:rgba(0,245,212,.12);color:var(--cyan);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">{{n}}</div>
+            <div><div style="font-size:13px;font-weight:600;color:var(--text);">{{t}}</div><div style="font-size:12px;color:var(--text3);line-height:1.5;">{{d}}</div></div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;">👁️ Face Pipeline</div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          {% for n,t,d in [
+            ('1','face-api.js','Runs TinyFaceDetector + expression model entirely in your browser using WebGL.'),
+            ('2','Expression Detection','Detects 7 raw emotions: happy, sad, angry, fearful, disgusted, surprised, neutral.'),
+            ('3','Mood Classification','Positive (happy/surprised), Negative (sad/angry/fearful/disgusted), or Neutral.'),
+            ('4','MongoDB Storage','Dominant emotion, confidence, and full expression vector saved to face_analyses collection.'),
+          ] %}
+          <div style="display:flex;gap:12px;">
+            <div style="width:24px;height:24px;border-radius:50%;background:rgba(123,47,255,.12);color:var(--purple);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">{{n}}</div>
+            <div><div style="font-size:13px;font-weight:600;color:var(--text);">{{t}}</div><div style="font-size:12px;color:var(--text3);line-height:1.5;">{{d}}</div></div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end container -->
+
+{% endblock %}
+{% block scripts %}
+<style>
+/* ── Biometric page styles ── */
+.bio-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.bio-card-header { display:flex; gap:14px; align-items:center; }
+.bio-icon { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+.bio-title { font-size:17px; font-weight:700; font-family:var(--font-display); color:var(--text); }
+.bio-sub { font-size:12px; color:var(--text3); margin-top:2px; }
+.bio-status {
+  display: inline-flex; align-items:center; gap:8px;
+  padding: 6px 14px; border-radius: 20px; font-size:13px; font-weight:600;
+  width: fit-content;
+}
+.bio-status.neutral { background:rgba(245,158,11,.1); color:var(--amber); border:1px solid rgba(245,158,11,.2); }
+.bio-status.positive { background:rgba(16,185,129,.1); color:var(--green); border:1px solid rgba(16,185,129,.2); }
+.bio-status.negative { background:rgba(239,68,68,.1); color:var(--red); border:1px solid rgba(239,68,68,.2); }
+.bio-status.recording { background:rgba(239,68,68,.15); color:var(--red); border:1px solid rgba(239,68,68,.3); animation: pulse-status 1.2s ease-in-out infinite; }
+.bio-status.loading { background:rgba(0,245,212,.08); color:var(--cyan); border:1px solid rgba(0,245,212,.2); }
+@keyframes pulse-status { 0%,100%{opacity:1} 50%{opacity:.6} }
+
+/* waveform */
+.waveform-wrap {
+  position:relative; background:var(--bg2); border-radius:var(--r-md);
+  border:1px solid var(--border); overflow:hidden; height:90px;
+  display:flex; align-items:center; justify-content:center;
+}
+#waveformCanvas { position:absolute; inset:0; width:100%; height:100%; }
+.waveform-idle { position:relative; z-index:1; font-size:13px; color:var(--text3); }
+
+/* transcript */
+.transcript-box { background:var(--bg2); border:1px solid var(--border); border-radius:var(--r-md); padding:16px; }
+.transcript-label { font-size:11px; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px; }
+.transcript-text { font-size:14px; color:var(--text); line-height:1.7; }
+
+/* face viewport */
+.face-viewport {
+  position:relative; background:var(--bg2); border-radius:var(--r-md);
+  border:1px solid var(--border); overflow:hidden; aspect-ratio:4/3;
+  display:flex; align-items:center; justify-content:center;
+}
+#faceVideo { width:100%; height:100%; object-fit:cover; display:none; }
+#faceOverlay {
+  position:absolute; inset:0;
+  width:100%; height:100%;   /* CSS fill — coordinates are scaled in JS */
+  pointer-events:none;
+}
+.face-idle { position:absolute; display:flex; flex-direction:column; align-items:center; gap:10px; color:var(--text3); font-size:14px; text-align:center; padding:20px; }
+.scan-line {
+  position:absolute; left:0; right:0; height:2px;
+  background:linear-gradient(90deg, transparent, var(--purple), transparent);
+  animation: scanDown 2s linear infinite;
+}
+@keyframes scanDown { 0%{top:0} 100%{top:100%} }
+.face-emotion-badge {
+  position:absolute; bottom:12px; left:50%; transform:translateX(-50%);
+  padding:6px 20px; border-radius:20px; font-size:14px; font-weight:700;
+  background:rgba(0,0,0,.7); backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.15); color:#fff; white-space:nowrap;
+}
+.model-loader {
+  display:flex; align-items:center; gap:10px;
+  padding:12px 16px; background:rgba(0,245,212,.06);
+  border-radius:var(--r-sm); border:1px solid rgba(0,245,212,.15);
+  color:var(--cyan); font-size:13px;
+}
+
+/* bio-result */
+.bio-result {
+  background:var(--bg2); border-radius:var(--r-md); padding:20px;
+  border:1px solid var(--border);
+}
+.bio-result-mood {
+  font-size:36px; font-weight:800; font-family:var(--font-display);
+  margin-bottom:4px;
+}
+.bio-result-meta { font-size:13px; color:var(--text3); }
+.expr-grid { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
+.expr-chip {
+  padding:4px 10px; border-radius:20px; font-size:12px;
+  background:var(--surface2); border:1px solid var(--border);
+  color:var(--text2);
+}
+
+/* history */
+.bio-history { border-top:1px solid var(--border); padding-top:16px; }
+.bio-history-title { font-size:11px; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:.08em; margin-bottom:10px; }
+.history-item {
+  display:flex; align-items:center; gap:12px; padding:8px 12px;
+  background:var(--surface2); border-radius:var(--r-sm); margin-bottom:6px;
+  border:1px solid var(--border);
+}
+.history-mood-badge {
+  padding:3px 10px; border-radius:12px; font-size:11px; font-weight:700;
+  text-transform:uppercase; letter-spacing:.05em;
+}
+.history-mood-badge.positive { background:rgba(16,185,129,.15); color:var(--green); }
+.history-mood-badge.negative { background:rgba(239,68,68,.15); color:var(--red); }
+.history-mood-badge.neutral { background:rgba(245,158,11,.15); color:var(--amber); }
+.history-preview { font-size:12px; color:var(--text3); flex:1; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+
+@media(max-width:768px) {
+  .bio-cards-grid { grid-template-columns:1fr !important; }
+}
+</style>
+
+<script>
+// ═══════════════════════════════════════════════
+// VOICE RECOGNITION
+// ═══════════════════════════════════════════════
+let recognition = null;
+let isRecording = false;
+let audioCtx = null, analyser = null, micStream = null, animFrame = null;
+let fullTranscript = '';
+
+function initSpeechRecognition() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    showToast('Speech recognition not supported in this browser. Try Chrome.', 'error');
+    return null;
+  }
+  const r = new SR();
+  r.continuous = true;
+  r.interimResults = true;
+  r.lang = 'en-US';
+
+  r.onstart = () => {
+    isRecording = true;
+    setVoiceStatus('recording', '🔴 Recording...');
+    document.getElementById('recordBtn').innerHTML = '⏹️ Stop Recording';
+    document.getElementById('recordBtn').style.background = 'rgba(239,68,68,.2)';
+    document.getElementById('recordBtn').style.color = 'var(--red)';
+    document.getElementById('waveformIdle').style.display = 'none';
+  };
+
+  r.onresult = (e) => {
+    let interim = '';
+    fullTranscript = '';
+    for (let i = 0; i < e.results.length; i++) {
+      if (e.results[i].isFinal) fullTranscript += e.results[i][0].transcript + ' ';
+      else interim += e.results[i][0].transcript;
+    }
+    const display = (fullTranscript + interim).trim();
+    if (display) {
+      document.getElementById('transcriptBox').style.display = 'block';
+      document.getElementById('transcriptText').textContent = display;
+    }
+  };
+
+  r.onerror = (e) => {
+    console.warn('Speech error:', e.error);
+    if (e.error === 'no-speech') return;
+    showToast('Speech error: ' + e.error, 'error');
+    stopRecording();
+  };
+
+  r.onend = () => {
+    if (isRecording) {
+      // Auto-restart if we stopped due to silence
+      try { r.start(); } catch(err) { stopRecording(); }
+    }
+  };
+
+  return r;
+}
+
+async function toggleRecord() {
+  if (isRecording) {
+    stopRecording();
+    // Analyze what we have
+    const text = fullTranscript.trim() || document.getElementById('transcriptText').textContent.trim();
+    if (text.length >= 3) await analyzeVoice(text);
+    else showToast('No speech detected. Try speaking louder.', 'error');
+  } else {
+    startRecording();
+  }
+}
+
+async function startRecording() {
+  fullTranscript = '';
+  document.getElementById('transcriptBox').style.display = 'none';
+  document.getElementById('voiceResult').style.display = 'none';
+
+  // Waveform
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    micStream = stream;
+    audioCtx = new AudioContext();
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    const src = audioCtx.createMediaStreamSource(stream);
+    src.connect(analyser);
+    drawWaveform();
+  } catch(e) {
+    console.warn('Mic access denied for waveform:', e);
+  }
+
+  // Speech recognition
+  recognition = initSpeechRecognition();
+  if (!recognition) return;
+  try { recognition.start(); }
+  catch(e) { showToast('Could not start recording: ' + e.message, 'error'); }
+}
+
+function stopRecording() {
+  isRecording = false;
+  if (recognition) { try { recognition.stop(); } catch(e){} recognition = null; }
+  if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+  if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+  if (audioCtx) { audioCtx.close(); audioCtx = null; }
+
+  setVoiceStatus('neutral', 'Ready to record');
+  document.getElementById('recordBtn').innerHTML = '🎙️ Start Recording';
+  document.getElementById('recordBtn').style.background = '';
+  document.getElementById('recordBtn').style.color = '';
+  document.getElementById('waveformIdle').style.display = 'flex';
+
+  // Clear canvas
+  const canvas = document.getElementById('waveformCanvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function drawWaveform() {
+  if (!analyser) return;
+  const canvas = document.getElementById('waveformCanvas');
+  const ctx = canvas.getContext('2d');
+  const bufLen = analyser.frequencyBinCount;
+  const data = new Uint8Array(bufLen);
+
+  function draw() {
+    animFrame = requestAnimationFrame(draw);
+    analyser.getByteTimeDomainData(data);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#00f5d4';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    const sliceW = canvas.width / bufLen;
+    let x = 0;
+    for (let i = 0; i < bufLen; i++) {
+      const v = data[i] / 128.0;
+      const y = v * canvas.height / 2;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      x += sliceW;
+    }
+    ctx.lineTo(canvas.width, canvas.height / 2);
+    ctx.stroke();
+  }
+  draw();
+}
+
+async function analyzeVoice(text) {
+  setVoiceStatus('loading', '⏳ Analyzing...');
+  try {
+    const data = await apiPost('/api/voice-analyze', { text });
+    if (data.error) { showToast(data.error, 'error'); setVoiceStatus('neutral','Ready'); return; }
+
+    const s = data.sentiment;
+    setVoiceStatus(s.label, s.emoji + ' Mood: ' + s.label.toUpperCase());
+
+    const resultEl = document.getElementById('voiceResult');
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = `
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">
+        <div style="font-size:44px;">${s.emoji}</div>
+        <div>
+          <div class="bio-result-mood" style="color:${s.color};">${s.label.toUpperCase()}</div>
+          <div class="bio-result-meta">Score: ${s.score} · Confidence: ${s.confidence}%</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+        ${makeBar('Positivity', s.label==='positive'?s.confidence:Math.max(0,Math.round((s.score+1)*25)), 'var(--green)')}
+        ${makeBar('Negativity', s.label==='negative'?s.confidence:Math.max(0,Math.round((-s.score+1)*25)), 'var(--red)')}
+        ${makeBar('Confidence', s.confidence, 'var(--cyan)')}
+      </div>
+      ${s.keywords_positive.length ? `<div style="font-size:12px;color:var(--green);margin-top:8px;">✅ Positive signals: ${s.keywords_positive.join(', ')}</div>` : ''}
+      ${s.keywords_negative.length ? `<div style="font-size:12px;color:var(--red);margin-top:4px;">⚠️ Negative signals: ${s.keywords_negative.join(', ')}</div>` : ''}
+      <div style="font-size:11px;color:var(--text3);margin-top:10px;">💾 Saved to MongoDB · ${data.word_count} words</div>
+    `;
+
+    addVoiceHistory({ emoji: s.emoji, label: s.label, preview: data.text_preview, color: s.color });
+    showToast('Voice analysis saved to MongoDB ✓', 'success');
+  } catch(e) {
+    showToast('Analysis failed. Is Flask running?', 'error');
+    setVoiceStatus('neutral', 'Ready');
+  }
+}
+
+function makeBar(label, pct, color) {
+  return `<div style="text-align:center;">
+    <div style="font-size:16px;font-weight:700;color:${color};">${pct}%</div>
+    <div style="height:4px;background:var(--surface2);border-radius:2px;margin:4px 0;">
+      <div style="height:100%;width:${pct}%;background:${color};border-radius:2px;"></div>
+    </div>
+    <div style="font-size:10px;color:var(--text3);">${label}</div>
+  </div>`;
+}
+
+function clearVoice() {
+  if (isRecording) stopRecording();
+  fullTranscript = '';
+  document.getElementById('transcriptBox').style.display = 'none';
+  document.getElementById('transcriptText').textContent = '';
+  document.getElementById('voiceResult').style.display = 'none';
+  setVoiceStatus('neutral', 'Ready to record');
+}
+
+function setVoiceStatus(cls, text) {
+  const el = document.getElementById('voiceStatus');
+  el.className = 'bio-status ' + cls;
+  el.textContent = text;
+}
+
+let voiceHistory = [];
+function addVoiceHistory(item) {
+  voiceHistory.unshift(item);
+  const list = document.getElementById('voiceHistoryList');
+  list.innerHTML = voiceHistory.slice(0,5).map(h => `
+    <div class="history-item">
+      <span>${h.emoji}</span>
+      <span class="history-mood-badge ${h.label}">${h.label}</span>
+      <span class="history-preview">${h.preview}</span>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════
+// FACE RECOGNITION  (fully fixed)
+// ═══════════════════════════════════════════════
+const EMOTION_EMOJI = {
+  happy: '😊', sad: '😢', angry: '😠',
+  fearful: '😨', disgusted: '🤢', surprised: '😲', neutral: '😐'
+};
+const POSITIVE_EMOTIONS = ['happy', 'surprised'];
+const NEGATIVE_EMOTIONS = ['sad', 'angry', 'fearful', 'disgusted'];
+
+let cameraRunning      = false;
+let faceDetectionRAF   = null;   // requestAnimationFrame handle
+let faceModelsLoaded   = false;
+let lastDetection      = null;
+let modelLoadPromise   = null;   // deduplicate concurrent load calls
+let detectionRunning   = false;  // prevents overlapping async detections
+
+// ── CORRECT model URL: weights are inside the npm package's `weights/` folder ──
+// jsDelivr serves npm package files at: /npm/<pkg>@<ver>/<path>
+const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model';
+
+// Fallback mirror in case primary fails
+const MODEL_URL_FALLBACK = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+
+async function loadFaceModels() {
+  // Return existing promise if already loading/loaded
+  if (modelLoadPromise) return modelLoadPromise;
+
+  modelLoadPromise = (async () => {
+    document.getElementById('modelLoading').style.display = 'flex';
+    setFaceStatus('loading', '⏳ Loading AI models…');
+
+    // Check that faceapi is available (script may still be loading)
+    if (typeof faceapi === 'undefined') {
+      showToast('face-api.js not loaded. Check internet connection.', 'error');
+      document.getElementById('modelLoading').style.display = 'none';
+      setFaceStatus('neutral', 'Library load failed');
+      modelLoadPromise = null;
+      return false;
+    }
+
+    // Try primary CDN, fall back to GitHub raw
+    const urls = [MODEL_URL, MODEL_URL_FALLBACK];
+    for (const url of urls) {
+      try {
+        await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri(url),
+          faceapi.nets.faceExpressionNet.loadFromUri(url),
+        ]);
+        faceModelsLoaded = true;
+        document.getElementById('modelLoading').style.display = 'none';
+        console.log('Face models loaded from:', url);
+        return true;
+      } catch(e) {
+        console.warn('Model load failed from', url, e.message);
+        // Reset nets so next URL can load cleanly
+        try { faceapi.nets.tinyFaceDetector.dispose(); } catch(_){}
+        try { faceapi.nets.faceExpressionNet.dispose(); } catch(_){}
+      }
+    }
+
+    // Both URLs failed
+    document.getElementById('modelLoading').style.display = 'none';
+    setFaceStatus('neutral', 'Model load failed');
+    showToast('Could not load face models — check your internet connection.', 'error');
+    modelLoadPromise = null;
+    return false;
+  })();
+
+  return modelLoadPromise;
+}
+
+async function toggleCamera() {
+  if (cameraRunning) stopCamera();
+  else await startCamera();
+}
+
+async function startCamera() {
+  // Ensure models are loaded first
+  if (!faceModelsLoaded) {
+    const ok = await loadFaceModels();
+    if (!ok) return;
+  }
+
+  setFaceStatus('loading', '⏳ Starting camera…');
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
+    });
+
+    const video = document.getElementById('faceVideo');
+    video.srcObject = stream;
+    video.style.display = 'block';
+    document.getElementById('faceIdle').style.display = 'none';
+    document.getElementById('scanLine').style.display = 'block';
+
+    // Wait for video metadata AND first frame before starting detection
+    await new Promise((resolve, reject) => {
+      video.onloadedmetadata = () => {
+        // Sync canvas to actual video intrinsic dimensions
+        const overlay = document.getElementById('faceOverlay');
+        overlay.width  = video.videoWidth  || 640;
+        overlay.height = video.videoHeight || 480;
+      };
+      video.oncanplay = resolve;
+      video.onerror   = reject;
+    });
+
+    // Explicitly play (needed on some browsers even with autoplay attribute)
+    try { await video.play(); } catch(e) { console.warn('video.play():', e); }
+
+    cameraRunning = true;
+    document.getElementById('cameraBtn').innerHTML     = '⏹️ Stop Camera';
+    document.getElementById('cameraBtn').style.background   = 'rgba(239,68,68,.15)';
+    document.getElementById('cameraBtn').style.color        = 'var(--red)';
+    document.getElementById('cameraBtn').style.borderColor  = 'rgba(239,68,68,.3)';
+    document.getElementById('captureBtn').disabled = false;
+    setFaceStatus('neutral', '👁️ Detecting…');
+
+    // Use rAF loop instead of setInterval — smoother and pauses when tab is hidden
+    faceDetectionLoop();
+
+  } catch(e) {
+    console.error('Camera error:', e);
+    const msg = e.name === 'NotAllowedError'
+      ? 'Camera permission denied. Click the camera icon in your browser address bar to allow access.'
+      : e.name === 'NotFoundError'
+      ? 'No camera found on this device.'
+      : 'Camera error: ' + e.message;
+    showToast(msg, 'error');
+    setFaceStatus('neutral', 'Camera unavailable');
+    modelLoadPromise = null; // allow retry
+  }
+}
+
+// rAF-based detection loop — throttled to ~10 fps to keep CPU reasonable
+let _lastDetectTime = 0;
+function faceDetectionLoop() {
+  if (!cameraRunning) return;
+  faceDetectionRAF = requestAnimationFrame(async (now) => {
+    if (now - _lastDetectTime > 100) { // ~10 fps
+      _lastDetectTime = now;
+      await runFaceDetection();
+    }
+    faceDetectionLoop();
+  });
+}
+
+function stopCamera() {
+  cameraRunning = false;
+  if (faceDetectionRAF) { cancelAnimationFrame(faceDetectionRAF); faceDetectionRAF = null; }
+
+  const video = document.getElementById('faceVideo');
+  if (video.srcObject) {
+    video.srcObject.getTracks().forEach(t => t.stop());
+    video.srcObject = null;
+  }
+  video.style.display = 'none';
+  document.getElementById('faceIdle').style.display   = 'flex';
+  document.getElementById('scanLine').style.display   = 'none';
+  document.getElementById('emotionBadge').style.display = 'none';
+  lastDetection = null;
+
+  const overlay = document.getElementById('faceOverlay');
+  overlay.getContext('2d').clearRect(0, 0, overlay.width, overlay.height);
+
+  document.getElementById('cameraBtn').innerHTML    = '📷 Start Camera';
+  document.getElementById('cameraBtn').style.background  = 'rgba(123,47,255,.2)';
+  document.getElementById('cameraBtn').style.color       = 'var(--purple)';
+  document.getElementById('cameraBtn').style.borderColor = 'rgba(123,47,255,.3)';
+  document.getElementById('captureBtn').disabled = true;
+  setFaceStatus('neutral', 'Camera not started');
+}
+
+async function runFaceDetection() {
+  if (!cameraRunning || !faceModelsLoaded || detectionRunning) return;
+
+  const video = document.getElementById('faceVideo');
+  // readyState 2 = HAVE_CURRENT_DATA, 3 = HAVE_FUTURE_DATA, 4 = HAVE_ENOUGH_DATA
+  if (!video || video.readyState < 2 || video.paused || video.ended) return;
+
+  detectionRunning = true;
+  try {
+    const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.4 });
+    const detection = await faceapi
+      .detectSingleFace(video, options)
+      .withFaceExpressions();
+
+    const overlay = document.getElementById('faceOverlay');
+    const ctx     = overlay.getContext('2d');
+
+    // Keep canvas size synced (handles resize / orientation changes)
+    if (overlay.width !== video.videoWidth && video.videoWidth > 0) {
+      overlay.width  = video.videoWidth;
+      overlay.height = video.videoHeight;
+    }
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+
+    if (!detection) {
+      document.getElementById('emotionBadge').style.display = 'none';
+      setFaceStatus('neutral', '👁️ No face detected');
+      return;
+    }
+
+    lastDetection = detection;
+
+    // ── Compute scale from video intrinsic → canvas CSS display size ──
+    // The canvas element fills the viewport div via CSS (100% w/h).
+    // We must scale coords from intrinsic video space → canvas CSS pixels.
+    const scaleX = overlay.clientWidth  / overlay.width;
+    const scaleY = overlay.clientHeight / overlay.height;
+
+    const box = detection.detection.box;
+    const sx = box.x * scaleX;
+    const sy = box.y * scaleY;
+    const sw = box.width  * scaleX;
+    const sh = box.height * scaleY;
+
+    // ── Dominant emotion ──
+    const expressions = detection.expressions;
+    const dominant    = Object.entries(expressions).sort((a, b) => b[1] - a[1])[0];
+    const emotionName = dominant[0];
+    const confidence  = dominant[1];
+
+    let boxColor = '#f59e0b'; // neutral amber
+    if (POSITIVE_EMOTIONS.includes(emotionName)) boxColor = '#10b981';
+    if (NEGATIVE_EMOTIONS.includes(emotionName)) boxColor = '#ef4444';
+
+    // ── Draw glowing bounding box ──
+    ctx.save();
+    ctx.strokeStyle = boxColor;
+    ctx.lineWidth   = 2.5;
+    ctx.shadowColor = boxColor;
+    ctx.shadowBlur  = 12;
+    ctx.strokeRect(sx, sy, sw, sh);
+
+    // Corner accent marks
+    const cs = 14; // corner size
+    ctx.lineWidth = 3;
+    ctx.shadowBlur = 18;
+    [[sx, sy], [sx+sw-cs, sy], [sx, sy+sh-cs], [sx+sw-cs, sy+sh-cs]].forEach(([cx, cy]) => {
+      ctx.beginPath();
+      ctx.moveTo(cx + (cx===sx ? 0 : cs), cy);
+      ctx.lineTo(cx + (cx===sx ? cs : 0), cy);
+      ctx.moveTo(cx, cy + (cy===sy ? 0 : cs));
+      ctx.lineTo(cx, cy + (cy===sy ? cs : 0));
+      ctx.stroke();
+    });
+    ctx.restore();
+
+    // ── Emotion label above the box ──
+    ctx.save();
+    const label = `${EMOTION_EMOJI[emotionName]||'😐'} ${emotionName}  ${Math.round(confidence*100)}%`;
+    ctx.font      = 'bold 13px Inter, sans-serif';
+    const tw      = ctx.measureText(label).width;
+    const lx      = Math.max(0, sx + sw/2 - tw/2 - 8);
+    const ly      = Math.max(0, sy - 28);
+    ctx.fillStyle = 'rgba(0,0,0,0.65)';
+    ctx.beginPath();
+    ctx.roundRect(lx, ly, tw + 16, 22, 6);
+    ctx.fill();
+    ctx.fillStyle   = boxColor;
+    ctx.shadowColor = boxColor;
+    ctx.shadowBlur  = 6;
+    ctx.fillText(label, lx + 8, ly + 15);
+    ctx.restore();
+
+    // ── Floating badge at bottom of viewport ──
+    const badge = document.getElementById('emotionBadge');
+    badge.style.display     = 'block';
+    badge.style.borderColor = boxColor + '80';
+    badge.style.color       = boxColor;
+    badge.textContent       = `${EMOTION_EMOJI[emotionName]||'😐'} ${emotionName}  ${Math.round(confidence*100)}%`;
+
+    const moodClass = POSITIVE_EMOTIONS.includes(emotionName)
+      ? 'positive' : NEGATIVE_EMOTIONS.includes(emotionName)
+      ? 'negative' : 'neutral';
+    setFaceStatus(moodClass, `Detected: ${emotionName} (${Math.round(confidence*100)}%)`);
+
+  } catch(e) {
+    // Silent warn — detection errors are transient
+    console.warn('Detection frame error:', e.message);
+  } finally {
+    detectionRunning = false;
+  }
+}
+
+async function captureEmotion() {
+  if (!lastDetection) {
+    showToast('No face detected yet — position your face in frame.', 'error');
+    return;
+  }
+
+  const expressions  = lastDetection.expressions;
+  const dominant     = Object.entries(expressions).sort((a, b) => b[1] - a[1])[0];
+  const emotionName  = dominant[0];
+  const confidence   = dominant[1];
+
+  const expRounded = {};
+  for (const [k, v] of Object.entries(expressions)) {
+    expRounded[k] = Math.round(v * 1000) / 1000;
+  }
+
+  setFaceStatus('loading', '⏳ Saving to MongoDB…');
+
+  try {
+    const data = await apiPost('/api/face-analyze', {
+      emotion:     emotionName,
+      confidence:  confidence,
+      expressions: expRounded,
+    });
+
+    if (data.error) { showToast(data.error, 'error'); setFaceStatus('neutral','👁️ Detecting…'); return; }
+
+    setFaceStatus(data.mood, data.emoji + ' Mood: ' + data.mood.toUpperCase());
+
+    const resultEl = document.getElementById('faceResult');
+    resultEl.style.display = 'block';
+
+    const sortedExpr = Object.entries(expRounded).sort((a, b) => b[1] - a[1]);
+    const exprBars = sortedExpr.map(([name, val]) => {
+      const pct       = Math.round(val * 100);
+      const isDominant = name === emotionName;
+      return `<div style="margin-bottom:6px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;
+             color:${isDominant ? data.color : 'var(--text3)'};margin-bottom:2px;">
+          <span>${EMOTION_EMOJI[name]||'😐'} ${name}${isDominant?' ★':''}</span>
+          <span>${pct}%</span>
+        </div>
+        <div style="height:4px;background:var(--surface2);border-radius:2px;">
+          <div style="height:100%;width:${pct}%;background:${isDominant ? data.color : 'rgba(255,255,255,.18)'};
+               border-radius:2px;transition:width .4s;"></div>
+        </div>
+      </div>`;
+    }).join('');
+
+    resultEl.innerHTML = `
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+        <div style="font-size:44px;">${data.emoji}</div>
+        <div>
+          <div class="bio-result-mood" style="color:${data.color};">${data.mood.toUpperCase()}</div>
+          <div class="bio-result-meta">Raw: ${emotionName} · Confidence: ${data.confidence}%</div>
+        </div>
+      </div>
+      <div style="font-size:12px;font-weight:600;color:var(--text3);
+           text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Expression Breakdown</div>
+      ${exprBars}
+      <div style="font-size:11px;color:var(--text3);margin-top:10px;">💾 Saved to MongoDB face_analyses</div>
+    `;
+
+    addFaceHistory({ emoji: data.emoji, mood: data.mood, emotionName, confidence: data.confidence });
+    showToast('Face analysis saved to MongoDB ✓', 'success');
+  } catch(e) {
+    console.error('captureEmotion error:', e);
+    showToast('Save failed — is the Flask server running?', 'error');
+    setFaceStatus('neutral', '👁️ Detecting…');
+  }
+}
+
+function setFaceStatus(cls, text) {
+  const el = document.getElementById('faceStatus');
+  el.className  = 'bio-status ' + cls;
+  el.textContent = text;
+}
+
+let faceHistory = [];
+function addFaceHistory(item) {
+  faceHistory.unshift(item);
+  const list = document.getElementById('faceHistoryList');
+  list.innerHTML = faceHistory.slice(0, 5).map(h => `
+    <div class="history-item">
+      <span>${h.emoji}</span>
+      <span class="history-mood-badge ${h.mood}">${h.mood}</span>
+      <span class="history-preview">${EMOTION_EMOJI[h.emotionName]||''} ${h.emotionName} · ${h.confidence}% conf.</span>
+    </div>
+  `).join('');
+}
+
+// ── Load recent histories from MongoDB on page load ──
+async function loadRecentFromDB() {
+  try {
+    const [vDocs, fDocs] = await Promise.all([
+      apiGet('/api/voice-analyses'),
+      apiGet('/api/face-analyses'),
+    ]);
+
+    if (Array.isArray(vDocs) && vDocs.length) {
+      document.getElementById('voiceHistoryList').innerHTML = vDocs.slice(0, 5).map(d => `
+        <div class="history-item">
+          <span>${d.sentiment?.emoji || '😐'}</span>
+          <span class="history-mood-badge ${d.sentiment?.label}">${d.sentiment?.label}</span>
+          <span class="history-preview">${d.text_preview || ''}</span>
+        </div>
+      `).join('');
+    }
+
+    if (Array.isArray(fDocs) && fDocs.length) {
+      document.getElementById('faceHistoryList').innerHTML = fDocs.slice(0, 5).map(d => `
+        <div class="history-item">
+          <span>${d.emoji || '😐'}</span>
+          <span class="history-mood-badge ${d.mood}">${d.mood}</span>
+          <span class="history-preview">${EMOTION_EMOJI[d.raw_emotion]||''} ${d.raw_emotion} · ${d.confidence}% conf.</span>
+        </div>
+      `).join('');
+    }
+  } catch(e) {
+    console.warn('Could not load DB history:', e);
+  }
+}
+
+// Pre-load models in background so camera starts faster when user clicks
+window.addEventListener('load', () => {
+  // Small delay so the page renders first
+  setTimeout(() => {
+    if (typeof faceapi !== 'undefined') {
+      loadFaceModels().catch(() => {});
+    }
+  }, 1500);
+  loadRecentFromDB();
+});
+</script>
+{% endblock %}

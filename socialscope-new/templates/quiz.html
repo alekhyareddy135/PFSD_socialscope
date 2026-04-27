@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block title %}Knowledge Quiz{% endblock %}
+{% block content %}
+
+<div class="page-hero">
+  <div class="container page-hero-content">
+    <div class="overline">Interactive Quiz</div>
+    <h1>Test Your <span style="color:var(--cyan);">Knowledge</span></h1>
+    <p>10 research-backed questions on social media and adolescent wellbeing. Each answer comes with an explanation from the scientific literature.</p>
+  </div>
+</div>
+
+<div class="container" style="padding-bottom:80px;">
+  <div class="quiz-card" id="quizCard">
+
+    <!-- PROGRESS -->
+    <div class="quiz-progress" id="quizProgress">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span class="quiz-q-num" id="qNum">Question 1 of 10</span>
+        <span style="font-size:13px;font-weight:600;color:var(--cyan);" id="scoreDisplay">Score: 0</span>
+      </div>
+      <div class="quiz-progress-bar">
+        <div class="quiz-progress-fill" id="progressFill" style="width:10%"></div>
+      </div>
+    </div>
+
+    <!-- QUESTION -->
+    <div id="questionArea">
+      <div class="quiz-question" id="questionText">Loading...</div>
+      <div class="quiz-options" id="quizOptions"></div>
+      <div class="quiz-feedback" id="quizFeedback"></div>
+      <div style="margin-top:24px;display:flex;justify-content:flex-end;">
+        <button class="btn btn-cyan" id="nextBtn" onclick="nextQuestion()" style="display:none;">
+          Next Question →
+        </button>
+      </div>
+    </div>
+
+    <!-- RESULT (hidden initially) -->
+    <div class="quiz-result" id="quizResult" style="display:none;">
+      <div class="quiz-score-circle">
+        <div class="quiz-score-num" id="finalScore">0</div>
+        <div class="quiz-score-label">/ 10</div>
+      </div>
+      <h2 style="font-size:28px;font-weight:700;margin-bottom:10px;" id="resultTitle">Well done!</h2>
+      <p style="color:var(--text2);margin-bottom:28px;font-size:15px;" id="resultMsg"></p>
+      <div id="resultBreakdown" style="margin-bottom:28px;text-align:left;"></div>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn btn-cyan" onclick="restartQuiz()">↺ Retake Quiz</button>
+        <a href="/analyzer" class="btn btn-outline">Try NLP Analyzer →</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+const QUESTIONS = [
+  {
+    q: "What percentage of U.S. teenagers report using social media daily?",
+    opts: ["62%","78%","97%","45%"],
+    correct: 2,
+    explanation: "97% of U.S. teenagers report using social media daily, according to Pew Research Center (2022). Social media has become the primary social infrastructure for Gen Z."
+  },
+  {
+    q: "Which type of social media use is associated with BETTER mental health outcomes?",
+    opts: ["Passive scrolling","Watching viral videos","Active engagement (creating, messaging, commenting)","Using multiple platforms simultaneously"],
+    correct: 2,
+    explanation: "Active use — creating content, commenting, and messaging — is consistently associated with better wellbeing outcomes than passive scrolling. Passive consumption triggers social comparison without the social benefits."
+  },
+  {
+    q: "What did Facebook's internal research (leaked 2021) find about Instagram and teen girls?",
+    opts: ["It had no significant effect","1 in 3 teen girls experienced worse body image","It improved social connection for most","Teens preferred it to other platforms"],
+    correct: 1,
+    explanation: "Internal Facebook slides stated: 'We make body image issues worse for one in three teen girls.' The company had known this for years before the findings were publicly revealed by the Wall Street Journal."
+  },
+  {
+    q: "Teens who use phones after 10 PM typically lose how much sleep per night?",
+    opts: ["15–20 minutes","30–45 minutes","1–2 hours","3+ hours"],
+    correct: 2,
+    explanation: "Studies from the Royal College of Paediatrics (2019) show late-night phone users lose an average of 1–2 hours of sleep. Blue light suppresses melatonin, and anxiety from social media delays sleep onset."
+  },
+  {
+    q: "For which marginalised group has social media shown the most consistently POSITIVE mental health impacts?",
+    opts: ["Student athletes","Children in rural areas","LGBTQ+ youth","Gifted students"],
+    correct: 2,
+    explanation: "LGBTQ+ youth — especially in unsupportive households — show significantly lower loneliness and depression rates when they have access to affirming online communities (UCLA Williams Institute, 2022)."
+  },
+  {
+    q: "What is the legal minimum age for most social media platforms (in the UK and USA)?",
+    opts: ["12","13","14","16"],
+    correct: 1,
+    explanation: "The minimum age is 13 for most platforms under COPPA (USA) and UK law. However, this is rarely enforced — studies show the majority of 10–12 year olds use platforms restricted to 13+."
+  },
+  {
+    q: "What does 'algorithmic amplification' mean in the context of social media harms?",
+    opts: ["Platform recommending louder videos","System recommending increasingly extreme/harmful content","Making posts go viral","Increasing follower counts automatically"],
+    correct: 1,
+    explanation: "Algorithmic amplification refers to recommendation systems that escalate users from mild to increasingly extreme content because it maximises engagement. The CCDH showed TikTok could lead teens to eating disorder content within minutes."
+  },
+  {
+    q: "Which factor is the STRONGEST predictor of negative social media outcomes in adolescents?",
+    opts: ["Which platform they use","Total hours per day","Whether use is passive vs active","Number of followers"],
+    correct: 2,
+    explanation: "Research by Przybylski & Weinstein and Twenge consistently shows that the type of use (passive vs active) is a stronger predictor than raw duration. How you use it matters more than how long."
+  },
+  {
+    q: "What happened to teen wellbeing during COVID-19 lockdowns when social media use increased 70%?",
+    opts: ["All teens showed worse outcomes","Outcomes diverged sharply by use type (active vs passive)","All teens showed better outcomes","No significant change was observed"],
+    correct: 1,
+    explanation: "Oxford Internet Institute research showed paradoxical outcomes: active users (video calls, group chats) maintained ~68% of normal wellbeing scores, while passive consumers fell to ~39%. This most clearly validated the active/passive distinction."
+  },
+  {
+    q: "What does research suggest about the 'optimal' daily social media use for teens?",
+    opts: ["0 hours (complete abstinence is best)","Less than 30 minutes","1–2 hours of intentional, active use","More is better due to social benefits"],
+    correct: 2,
+    explanation: "The Goldilocks hypothesis (Przybylski & Weinstein, 2017) found that 1–2 hours of active, intentional use is associated with the best outcomes. Complete abstinence was associated with slightly lower wellbeing than moderate use."
+  }
+];
+
+let currentQ = 0, score = 0, answered = false;
+
+function loadQuestion() {
+  const q = QUESTIONS[currentQ];
+  document.getElementById('qNum').textContent = `Question ${currentQ+1} of ${QUESTIONS.length}`;
+  document.getElementById('progressFill').style.width = ((currentQ+1)/QUESTIONS.length*100) + '%';
+  document.getElementById('questionText').textContent = q.q;
+  document.getElementById('nextBtn').style.display = 'none';
+  document.getElementById('quizFeedback').className = 'quiz-feedback';
+  answered = false;
+
+  document.getElementById('quizOptions').innerHTML = q.opts.map((opt, i) =>
+    `<button class="quiz-option" onclick="selectAnswer(${i})">${opt}</button>`
+  ).join('');
+}
+
+function selectAnswer(idx) {
+  if (answered) return;
+  answered = true;
+  const q = QUESTIONS[currentQ];
+  const opts = document.querySelectorAll('.quiz-option');
+  opts[idx].classList.add(idx === q.correct ? 'correct' : 'wrong');
+  opts[q.correct].classList.add('correct');
+  opts.forEach(o => o.classList.add('disabled'));
+
+  if (idx === q.correct) score++;
+  document.getElementById('scoreDisplay').textContent = `Score: ${score}`;
+
+  const fb = document.getElementById('quizFeedback');
+  fb.className = 'quiz-feedback show ' + (idx === q.correct ? 'correct' : 'wrong');
+  fb.innerHTML = (idx === q.correct ? '✓ Correct! ' : '✗ Not quite. ') + q.explanation;
+
+  document.getElementById('nextBtn').style.display = 'inline-flex';
+}
+
+function nextQuestion() {
+  currentQ++;
+  if (currentQ >= QUESTIONS.length) showResult();
+  else loadQuestion();
+}
+
+function showResult() {
+  document.getElementById('questionArea').style.display = 'none';
+  document.getElementById('quizProgress').style.display = 'none';
+  document.getElementById('quizResult').style.display = 'block';
+  document.getElementById('finalScore').textContent = score;
+
+  const pct = score / QUESTIONS.length * 100;
+  const titles = pct >= 80 ? 'Outstanding! 🎉' : pct >= 60 ? 'Well done! 👍' : 'Keep learning! 📚';
+  const msgs = pct >= 80
+    ? `You scored ${score}/10 — expert level knowledge of social media and youth wellbeing research.`
+    : pct >= 60
+    ? `You scored ${score}/10 — solid understanding. Explore the impact analysis to fill any gaps.`
+    : `You scored ${score}/10 — this is a complex topic. Check out our impact analysis and case studies to learn more.`;
+
+  document.getElementById('resultTitle').textContent = titles;
+  document.getElementById('resultMsg').textContent = msgs;
+
+  // Save to backend
+  apiPost('/api/quiz', { score, total: QUESTIONS.length }).catch(() => {});
+}
+
+function restartQuiz() {
+  currentQ = 0; score = 0;
+  document.getElementById('scoreDisplay').textContent = 'Score: 0';
+  document.getElementById('questionArea').style.display = 'block';
+  document.getElementById('quizProgress').style.display = 'block';
+  document.getElementById('quizResult').style.display = 'none';
+  loadQuestion();
+}
+
+loadQuestion();
+</script>
+{% endblock %}

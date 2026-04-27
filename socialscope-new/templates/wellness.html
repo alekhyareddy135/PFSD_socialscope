@@ -1,0 +1,1414 @@
+{% extends "base.html" %}
+{% block title %}Digital Wellness Tracker{% endblock %}
+{% block head %}
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── WELLNESS TRACKER STYLES ── */
+.wellness-shell {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: calc(100vh - var(--nav-h));
+  margin-top: var(--nav-h);
+  position: relative; z-index: 1;
+}
+
+/* SIDEBAR */
+.wellness-sidebar {
+  background: rgba(6,7,13,.9);
+  border-right: 1px solid var(--border);
+  padding: 28px 0;
+  position: sticky;
+  top: var(--nav-h);
+  height: calc(100vh - var(--nav-h));
+  overflow-y: auto;
+  backdrop-filter: blur(20px);
+}
+.ws-section-label {
+  font-size: 10px; font-weight: 700; letter-spacing: .15em;
+  color: var(--text3); text-transform: uppercase;
+  padding: 0 20px; margin: 20px 0 8px;
+}
+.ws-section-label:first-child { margin-top: 0; }
+.ws-nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 20px; cursor: pointer;
+  font-size: 13px; font-weight: 500; color: var(--text2);
+  border-left: 2px solid transparent;
+  transition: all .2s;
+}
+.ws-nav-item:hover { color: var(--text); background: var(--surface); }
+.ws-nav-item.active { color: var(--cyan); border-left-color: var(--cyan); background: rgba(0,245,212,.06); }
+.ws-nav-item .icon { width: 18px; text-align: center; font-size: 15px; }
+
+/* WELLNESS SCORE BADGE */
+.ws-score-badge {
+  margin: 0 16px 8px;
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  text-align: center;
+}
+.ws-score-num {
+  font-family: var(--font-display); font-size: 32px; font-weight: 800;
+  background: linear-gradient(135deg, var(--cyan), var(--blue));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.ws-score-label { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.ws-score-ring {
+  width: 60px; height: 60px; margin: 0 auto 8px;
+  position: relative;
+}
+.ws-score-ring svg { transform: rotate(-90deg); }
+
+/* MAIN CONTENT */
+.wellness-main {
+  padding: 32px;
+  overflow-y: auto;
+}
+
+/* PAGE HEADER */
+.ws-page-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 28px;
+}
+.ws-page-title { font-family: var(--font-display); font-size: 28px; font-weight: 700; }
+.ws-page-date { font-size: 13px; color: var(--text3); margin-top: 4px; }
+
+/* STAT CARDS */
+.ws-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.ws-stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 18px;
+  transition: all .2s;
+}
+.ws-stat-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+.ws-stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
+.ws-stat-value { font-family: var(--font-display); font-size: 26px; font-weight: 700; color: var(--text); }
+.ws-stat-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
+.ws-stat-delta { font-size: 11px; font-weight: 600; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+.ws-stat-delta.up { color: #ef4444; }
+.ws-stat-delta.down { color: #10b981; }
+
+/* GRID LAYOUTS */
+.ws-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+.ws-grid-3 { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px; }
+.ws-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 22px;
+}
+.ws-panel-title {
+  font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text3); margin-bottom: 18px;
+}
+
+/* APP BREAKDOWN */
+.app-row {
+  display: flex; align-items: center; gap: 12px; padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.app-row:last-child { border-bottom: none; }
+.app-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.app-name { font-size: 13px; font-weight: 500; color: var(--text); flex: 1; }
+.app-bar-wrap { flex: 2; }
+.app-bar-track { height: 5px; background: rgba(255,255,255,.06); border-radius: 99px; overflow: hidden; }
+.app-bar-fill { height: 100%; border-radius: 99px; transition: width 1.2s cubic-bezier(.4,0,.2,1); }
+.app-time { font-size: 12px; color: var(--text2); min-width: 50px; text-align: right; white-space: nowrap; }
+
+/* WEEKLY CHART */
+.weekly-chart { display: flex; align-items: flex-end; gap: 8px; height: 120px; margin-bottom: 12px; }
+.wc-bar-group { flex: 1; display: flex; align-items: flex-end; gap: 2px; height: 100%; }
+.wc-bar {
+  flex: 1; border-radius: 4px 4px 0 0; min-height: 4px;
+  transition: height 1s cubic-bezier(.4,0,.2,1);
+  cursor: pointer; position: relative;
+}
+.wc-bar:hover::after {
+  content: attr(data-tip);
+  position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,.9); color: #fff; font-size: 11px; padding: 4px 8px;
+  border-radius: 4px; white-space: nowrap; pointer-events: none; z-index: 10;
+}
+.wc-bar.social { background: rgba(67,97,238,.7); }
+.wc-bar.other { background: rgba(255,255,255,.12); }
+.wc-bar.social.today { background: var(--blue); box-shadow: 0 0 12px rgba(67,97,238,.5); }
+.wc-labels { display: flex; gap: 8px; }
+.wc-label { flex: 1; text-align: center; font-size: 11px; color: var(--text3); }
+.wc-label.today { color: var(--cyan); font-weight: 600; }
+.chart-legend { display: flex; gap: 16px; margin-top: 12px; }
+.legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+
+/* HEATMAP */
+.heatmap-grid { display: flex; gap: 3px; margin-bottom: 8px; }
+.hm-cell {
+  width: 16px; height: 16px; border-radius: 3px;
+  background: rgba(255,255,255,.05);
+  transition: transform .15s;
+  cursor: pointer; position: relative; flex-shrink: 0;
+}
+.hm-cell:hover { transform: scale(1.3); z-index: 2; }
+.hm-cell:hover::after {
+  content: attr(data-tip);
+  position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,.9); color: #fff; font-size: 10px; padding: 3px 7px;
+  border-radius: 4px; white-space: nowrap; pointer-events: none; z-index: 10;
+}
+.hm-cell[data-intensity="1"] { background: rgba(67,97,238,.25); }
+.hm-cell[data-intensity="2"] { background: rgba(67,97,238,.45); }
+.hm-cell[data-intensity="3"] { background: rgba(67,97,238,.65); }
+.hm-cell[data-intensity="4"] { background: rgba(67,97,238,.85); }
+.hm-cell[data-intensity="5"] { background: #4361ee; box-shadow: 0 0 6px rgba(67,97,238,.6); }
+.hm-time-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--text3); margin-top: 4px; }
+
+/* HOURLY PATTERN */
+.hourly-chart { display: flex; align-items: flex-end; gap: 2px; height: 60px; }
+.hr-bar { flex: 1; border-radius: 2px 2px 0 0; min-height: 2px; background: rgba(67,97,238,.3); transition: height .8s ease; cursor: pointer; }
+.hr-bar.peak { background: var(--blue); }
+.hr-bar.now { background: var(--cyan); box-shadow: 0 0 8px rgba(0,245,212,.5); }
+.hourly-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--text3); margin-top: 4px; }
+
+/* LOG USAGE FORM */
+.log-form { display: flex; flex-direction: column; gap: 14px; }
+.log-field label { display: block; font-size: 12px; color: var(--text3); margin-bottom: 6px; }
+.log-field input, .log-field select {
+  width: 100%; background: rgba(255,255,255,.05);
+  border: 1px solid var(--border); border-radius: var(--r-sm);
+  padding: 10px 14px; color: var(--text); font-size: 13px; font-family: var(--font-body);
+  transition: border-color .2s;
+}
+.log-field input:focus, .log-field select:focus { outline: none; border-color: var(--cyan); }
+.log-field select option { background: #1a1a2e; }
+
+/* APP QUICK BUTTONS */
+.app-quick-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+.app-quick-btn {
+  padding: 10px 8px; border-radius: var(--r-sm); background: var(--surface);
+  border: 1px solid var(--border); cursor: pointer; text-align: center;
+  font-size: 12px; font-weight: 500; color: var(--text2); transition: all .15s;
+}
+.app-quick-btn:hover { border-color: var(--cyan); color: var(--text); background: rgba(0,245,212,.06); }
+.app-quick-btn.selected { border-color: var(--cyan); background: rgba(0,245,212,.1); color: var(--cyan); }
+.app-quick-btn .app-emoji { font-size: 20px; display: block; margin-bottom: 4px; }
+
+/* GOALS */
+.goal-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.04); }
+.goal-item:last-child { border-bottom: none; }
+.goal-icon { font-size: 20px; }
+.goal-info { flex: 1; }
+.goal-name { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.goal-progress-wrap { display: flex; align-items: center; gap: 8px; }
+.goal-bar-track { flex: 1; height: 4px; background: rgba(255,255,255,.06); border-radius: 99px; overflow: hidden; }
+.goal-bar-fill { height: 100%; border-radius: 99px; transition: width 1s ease; }
+.goal-pct { font-size: 11px; color: var(--text3); min-width: 28px; text-align: right; }
+.goal-status { font-size: 18px; }
+
+/* WELLBEING SCORE METER */
+.wellbeing-meter { text-align: center; padding: 12px 0; }
+.wm-circle { width: 120px; height: 120px; margin: 0 auto 12px; position: relative; }
+.wm-circle svg { transform: rotate(-90deg); }
+.wm-inner { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+.wm-score { font-family: var(--font-display); font-size: 28px; font-weight: 800; }
+.wm-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .08em; }
+.wm-dims { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
+.wm-dim { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 10px; text-align: center; }
+.wm-dim-val { font-size: 16px; font-weight: 700; }
+.wm-dim-name { font-size: 10px; color: var(--text3); margin-top: 2px; }
+
+/* IMPACT SECTION */
+.impact-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.impact-card { padding: 14px; border-radius: var(--r-md); border: 1px solid; }
+.impact-card.negative { background: rgba(239,68,68,.06); border-color: rgba(239,68,68,.2); }
+.impact-card.positive { background: rgba(16,185,129,.06); border-color: rgba(16,185,129,.2); }
+.impact-card-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
+.impact-card.negative .impact-card-label { color: var(--red); }
+.impact-card.positive .impact-card-label { color: var(--green); }
+.impact-card-items { font-size: 12px; color: var(--text2); line-height: 1.8; }
+
+/* DAILY LIMIT */
+.daily-limit-wrap { margin-top: 16px; }
+.dl-slider-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.dl-slider { flex: 1; appearance: none; height: 4px; border-radius: 99px; background: rgba(255,255,255,.1); outline: none; }
+.dl-slider::-webkit-slider-thumb { appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; box-shadow: 0 0 8px rgba(0,245,212,.5); }
+.dl-val { font-size: 14px; font-weight: 700; color: var(--cyan); min-width: 40px; text-align: right; }
+
+/* BADGES/ACHIEVEMENTS */
+.badge-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.badge-item { text-align: center; }
+.badge-icon {
+  width: 52px; height: 52px; border-radius: 50%; margin: 0 auto 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; border: 2px solid;
+  transition: transform .2s, box-shadow .2s;
+}
+.badge-item:hover .badge-icon { transform: scale(1.1); }
+.badge-icon.earned { border-color: var(--cyan); background: rgba(0,245,212,.1); box-shadow: 0 0 20px rgba(0,245,212,.2); }
+.badge-icon.locked { border-color: var(--border); background: var(--surface); filter: grayscale(.8) opacity(.5); }
+.badge-name { font-size: 11px; color: var(--text2); font-weight: 500; }
+
+/* STREAK */
+.streak-display { display: flex; align-items: center; gap: 16px; padding: 14px; background: rgba(245,158,11,.06); border: 1px solid rgba(245,158,11,.2); border-radius: var(--r-md); margin-bottom: 16px; }
+.streak-fire { font-size: 32px; }
+.streak-count { font-family: var(--font-display); font-size: 32px; font-weight: 800; color: var(--amber); }
+.streak-label { font-size: 12px; color: var(--text3); }
+
+/* CHALLENGE CARDS */
+.challenge-item { display: flex; gap: 12px; padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); margin-bottom: 8px; transition: all .2s; }
+.challenge-item:hover { border-color: var(--border2); }
+.challenge-emoji { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
+.challenge-info { flex: 1; }
+.challenge-title { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+.challenge-desc { font-size: 12px; color: var(--text2); }
+.challenge-points { font-size: 12px; font-weight: 700; color: var(--amber); background: rgba(245,158,11,.1); padding: 3px 8px; border-radius: 6px; height: fit-content; }
+
+/* TABS */
+.ws-tabs { display: flex; gap: 4px; margin-bottom: 20px; background: var(--surface); border-radius: var(--r-md); padding: 4px; border: 1px solid var(--border); }
+.ws-tab { flex: 1; padding: 8px; text-align: center; font-size: 12px; font-weight: 600; border-radius: var(--r-sm); cursor: pointer; color: var(--text2); transition: all .2s; }
+.ws-tab.active { background: var(--cyan); color: #000; }
+
+/* PHONE PICKUPS */
+.pickup-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.pickup-icon { font-size: 20px; }
+.pickup-val { font-family: var(--font-display); font-size: 24px; font-weight: 700; color: var(--text); }
+.pickup-sub { font-size: 12px; color: var(--text3); }
+.pickup-heatmap { display: flex; gap: 3px; margin-top: 12px; }
+.ph-cell { flex: 1; height: 30px; border-radius: 4px; background: rgba(255,255,255,.04); cursor: pointer; transition: all .15s; }
+.ph-cell:hover { transform: scaleY(1.2); }
+
+/* SECTION VIEWS */
+.ws-view { display: none; }
+.ws-view.active { display: block; }
+
+/* REPORT */
+.report-insight { padding: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); margin-bottom: 10px; }
+.ri-header { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 8px; }
+.ri-icon { font-size: 20px; }
+.ri-title { font-size: 13px; font-weight: 600; }
+.ri-desc { font-size: 12px; color: var(--text2); line-height: 1.6; }
+.ri-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 6px; margin-left: auto; flex-shrink: 0; }
+.ri-badge.warn { background: rgba(239,68,68,.15); color: var(--red); }
+.ri-badge.ok { background: rgba(16,185,129,.15); color: var(--green); }
+.ri-badge.info { background: rgba(0,245,212,.1); color: var(--cyan); }
+
+/* NOTIFICATION DOT */
+.notif-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--red); display: inline-block; margin-left: 4px; animation: pulse 2s infinite; }
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .wellness-shell { grid-template-columns: 1fr; }
+  .wellness-sidebar { display: none; }
+  .ws-stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .ws-grid-2, .ws-grid-3 { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}
+{% block content %}
+
+<div class="wellness-shell">
+  <!-- SIDEBAR -->
+  <aside class="wellness-sidebar">
+    <div class="ws-section-label">Wellness Score</div>
+    <div class="ws-score-badge">
+      <div class="ws-score-ring">
+        <svg width="60" height="60" viewBox="0 0 60 60">
+          <circle cx="30" cy="30" r="24" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="5"/>
+          <circle id="sideScoreRing" cx="30" cy="30" r="24" fill="none" stroke="url(#scoreGrad)" stroke-width="5"
+            stroke-linecap="round" stroke-dasharray="150.8" stroke-dashoffset="75"/>
+          <defs>
+            <linearGradient id="scoreGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#00f5d4"/>
+              <stop offset="100%" stop-color="#4361ee"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+          <span id="sideScoreNum" style="font-family:var(--font-display);font-size:14px;font-weight:800;color:var(--cyan);">—</span>
+        </div>
+      </div>
+      <div class="ws-score-label">Log data to calculate</div>
+    </div>
+
+    <div class="ws-section-label">Navigation</div>
+    <div class="ws-nav-item active" onclick="switchView('dashboard')">
+      <span class="icon">📊</span> Dashboard
+    </div>
+    <div class="ws-nav-item" onclick="switchView('log')">
+      <span class="icon">✏️</span> Log Usage
+    </div>
+    <div class="ws-nav-item" onclick="switchView('report')">
+      <span class="icon">📋</span> Report
+    </div>
+    <div class="ws-nav-item" onclick="switchView('goals')">
+      <span class="icon">🎯</span> Goals
+    </div>
+
+    <div class="ws-section-label">Gamification</div>
+    <div class="ws-nav-item" onclick="switchView('challenges')">
+      <span class="icon">⚡</span> Challenges
+    </div>
+    <div class="ws-nav-item" onclick="switchView('badges')">
+      <span class="icon">🏆</span> Badges
+    </div>
+
+    <div class="ws-section-label">Other Tools</div>
+    <div class="ws-nav-item" onclick="location.href='/analyzer'">
+      <span class="icon">🧠</span> NLP Analyzer
+    </div>
+    <div class="ws-nav-item" onclick="location.href='/quiz'">
+      <span class="icon">🎮</span> Quiz
+    </div>
+    <div class="ws-nav-item" onclick="location.href='/dashboard'">
+      <span class="icon">📡</span> Live Dashboard
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="wellness-main">
+
+    <!-- ═══ DASHBOARD VIEW ═══ -->
+    <div class="ws-view active" id="view-dashboard">
+      <div class="ws-page-header">
+        <div>
+          <div class="ws-page-title">Dashboard</div>
+          <div class="ws-page-date" id="todayDate">Loading...</div>
+        </div>
+        <button class="btn btn-cyan" onclick="switchView('log')" style="padding:10px 20px;font-size:13px;">+ Log Usage</button>
+      </div>
+
+      <!-- STAT CARDS -->
+      <div class="ws-stat-grid">
+        <div class="ws-stat-card">
+          <div class="ws-stat-label">Total Screen Time</div>
+          <div class="ws-stat-value" id="stat-total">0m</div>
+          <div class="ws-stat-sub">today</div>
+          <div class="ws-stat-delta" id="stat-total-delta" style="display:none;"></div>
+        </div>
+        <div class="ws-stat-card">
+          <div class="ws-stat-label">Social Media</div>
+          <div class="ws-stat-value" id="stat-social">0m</div>
+          <div class="ws-stat-sub" id="stat-social-pct">0% of total</div>
+        </div>
+        <div class="ws-stat-card">
+          <div class="ws-stat-label">Phone Pickups</div>
+          <div class="ws-stat-value" id="stat-pickups">0</div>
+          <div class="ws-stat-sub">unlocks today</div>
+        </div>
+        <div class="ws-stat-card">
+          <div class="ws-stat-label">vs Daily Limit</div>
+          <div class="ws-stat-value" id="stat-limit-status" style="color:var(--green);">—</div>
+          <div class="ws-stat-sub" id="stat-limit-sub">set a goal to track</div>
+        </div>
+      </div>
+
+      <!-- CHARTS ROW -->
+      <div class="ws-grid-3">
+        <!-- WEEKLY CHART -->
+        <div class="ws-panel">
+          <div class="ws-panel-title">This Week — Social Media (H)</div>
+          <div class="weekly-chart" id="weeklyChart">
+            <div class="wc-bar-group"><div class="wc-bar social" style="height:0%" data-tip="Mon: 0h social"></div><div class="wc-bar other" style="height:0%" data-tip="Mon: 0h other"></div></div>
+            <div class="wc-bar-group"><div class="wc-bar social" style="height:0%" data-tip="Tue: 0h social"></div><div class="wc-bar other" style="height:0%" data-tip="Tue: 0h other"></div></div>
+            <div class="wc-bar-group"><div class="wc-bar social" style="height:0%" data-tip="Wed: 0h social"></div><div class="wc-bar other" style="height:0%" data-tip="Wed: 0h other"></div></div>
+            <div class="wc-bar-group"><div class="wc-bar social" style="height:0%" data-tip="Thu: 0h social"></div><div class="wc-bar other" style="height:0%" data-tip="Thu: 0h other"></div></div>
+            <div class="wc-bar-group"><div class="wc-bar social today" style="height:0%" data-tip="Today: 0h social"></div><div class="wc-bar other today" style="height:0%" data-tip="Today: 0h other"></div></div>
+            <div class="wc-bar-group"><div class="wc-bar social" style="height:0%"></div><div class="wc-bar other" style="height:0%"></div></div>
+            <div class="wc-bar-group"><div class="wc-bar social" style="height:0%"></div><div class="wc-bar other" style="height:0%"></div></div>
+          </div>
+          <div class="wc-labels">
+            <div class="wc-label">Mon</div><div class="wc-label">Tue</div><div class="wc-label">Wed</div>
+            <div class="wc-label">Thu</div><div class="wc-label today">Fri</div><div class="wc-label">Sat</div><div class="wc-label">Sun</div>
+          </div>
+          <div class="chart-legend" style="margin-top:12px;">
+            <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3);">
+              <div class="legend-dot" style="background:var(--blue);"></div> Social media
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3);">
+              <div class="legend-dot" style="background:rgba(255,255,255,.2);"></div> Other screen time
+            </div>
+          </div>
+        </div>
+
+        <!-- HOURLY PATTERN -->
+        <div class="ws-panel">
+          <div class="ws-panel-title">Hourly Pattern Today</div>
+          <div class="hourly-chart" id="hourlyChart">
+            <!-- generated by JS -->
+          </div>
+          <div class="hourly-labels">
+            <span>12am</span><span>6am</span><span>12pm</span><span>6pm</span><span>11pm</span>
+          </div>
+          <div style="margin-top:16px;">
+            <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text3);">
+              <div style="display:flex;gap:3px;">
+                <div style="width:10px;height:10px;border-radius:2px;background:rgba(255,255,255,.08);"></div>
+                <div style="width:10px;height:10px;border-radius:2px;background:rgba(67,97,238,.35);"></div>
+                <div style="width:10px;height:10px;border-radius:2px;background:rgba(67,97,238,.65);"></div>
+                <div style="width:10px;height:10px;border-radius:2px;background:var(--blue);"></div>
+                <div style="width:10px;height:10px;border-radius:2px;background:var(--cyan);box-shadow:0 0 4px rgba(0,245,212,.5);"></div>
+              </div>
+              Low → High
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- APP BREAKDOWN + USAGE HEATMAP -->
+      <div class="ws-grid-2">
+        <div class="ws-panel">
+          <div class="ws-panel-title">App Breakdown</div>
+          <div id="appBreakdownList">
+            <div style="font-size:13px;color:var(--text3);text-align:center;padding:20px;">No apps logged yet — go to Log usage</div>
+          </div>
+        </div>
+
+        <div class="ws-panel">
+          <div class="ws-panel-title">Usage Heatmap (Hourly Intensity)</div>
+          <div class="heatmap-grid" id="heatmapGrid"></div>
+          <div class="hm-time-labels"><span>12am</span><span>6am</span><span>12pm</span><span>6pm</span><span>11pm</span></div>
+
+          <div style="margin-top:20px;">
+            <div class="ws-panel-title" style="margin-bottom:12px;">Today's Apps</div>
+            <div id="todayApps" style="font-size:13px;color:var(--text3);">No apps logged yet — go to Log usage</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- IMPACT ON WELLBEING + SET DAILY LIMIT -->
+      <div class="ws-grid-2">
+        <div class="ws-panel">
+          <div class="ws-panel-title">Impact on Wellbeing</div>
+          <div class="wellbeing-meter">
+            <div class="wm-circle">
+              <svg width="120" height="120" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="48" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="10"/>
+                <circle id="wellbeingRing" cx="60" cy="60" r="48" fill="none" stroke="url(#wbGrad)" stroke-width="10"
+                  stroke-linecap="round" stroke-dasharray="301.6" stroke-dashoffset="301.6" style="transition:stroke-dashoffset 1.5s ease;"/>
+                <defs>
+                  <linearGradient id="wbGrad" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#ef4444"/>
+                    <stop offset="50%" stop-color="#f59e0b"/>
+                    <stop offset="100%" stop-color="#10b981"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div class="wm-inner">
+                <div class="wm-score" id="wellbeingScore">—</div>
+                <div class="wm-label">/100</div>
+              </div>
+            </div>
+            <div style="font-size:13px;color:var(--text2);" id="wellbeingMsg">Log your usage to calculate your wellness score</div>
+          </div>
+          <div class="wm-dims" id="wellbeingDims">
+            <div class="wm-dim"><div class="wm-dim-val" id="dim-sleep">—</div><div class="wm-dim-name">😴 Sleep</div></div>
+            <div class="wm-dim"><div class="wm-dim-val" id="dim-focus">—</div><div class="wm-dim-name">🎯 Focus</div></div>
+            <div class="wm-dim"><div class="wm-dim-val" id="dim-mood">—</div><div class="wm-dim-name">💆 Mood</div></div>
+            <div class="wm-dim"><div class="wm-dim-val" id="dim-social">—</div><div class="wm-dim-name">👫 Social</div></div>
+          </div>
+        </div>
+
+        <div class="ws-panel">
+          <div class="ws-panel-title">Set Your Daily Limit</div>
+          <div class="daily-limit-wrap">
+            <div style="font-size:13px;color:var(--text2);margin-bottom:14px;">Social media limit (hours/day)</div>
+            <div class="dl-slider-row">
+              <input type="range" min="0.5" max="8" step="0.5" value="2" class="dl-slider" id="limitSlider" oninput="updateLimit(this.value)">
+              <div class="dl-val" id="limitVal">2h</div>
+            </div>
+            <div id="limitStatus" style="font-size:12px;color:var(--text3);margin-bottom:16px;"></div>
+            <button class="btn btn-cyan" onclick="saveLimit()" style="width:100%;justify-content:center;font-size:13px;padding:10px;">Save Limit</button>
+
+            <div style="margin-top:20px;">
+              <div class="ws-panel-title" style="margin-bottom:12px;">Potential Impacts</div>
+              <div class="impact-cards" id="impactCards">
+                <div class="impact-card negative">
+                  <div class="impact-card-label">Risks at High Usage</div>
+                  <div class="impact-card-items">😴 Poor sleep quality<br>😰 Increased anxiety<br>👁️ Eye strain<br>🧠 Reduced focus</div>
+                </div>
+                <div class="impact-card positive">
+                  <div class="impact-card-label">Benefits at Low Usage</div>
+                  <div class="impact-card-items">🌟 Better mood<br>📚 More productive<br>💬 Deeper connections<br>🧘 Less stress</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ LOG USAGE VIEW ═══ -->
+    <div class="ws-view" id="view-log">
+      <div class="ws-page-header">
+        <div>
+          <div class="ws-page-title">Log Usage</div>
+          <div class="ws-page-date">Track your screen time session</div>
+        </div>
+      </div>
+
+      <div class="ws-grid-2">
+        <div class="ws-panel">
+          <div class="ws-panel-title">Quick App Select</div>
+          <div class="app-quick-btns" id="appQuickBtns">
+            <div class="app-quick-btn" onclick="selectApp('Instagram')"><span class="app-emoji">📸</span>Instagram</div>
+            <div class="app-quick-btn" onclick="selectApp('TikTok')"><span class="app-emoji">🎵</span>TikTok</div>
+            <div class="app-quick-btn" onclick="selectApp('YouTube')"><span class="app-emoji">▶️</span>YouTube</div>
+            <div class="app-quick-btn" onclick="selectApp('Twitter/X')"><span class="app-emoji">🐦</span>Twitter/X</div>
+            <div class="app-quick-btn" onclick="selectApp('WhatsApp')"><span class="app-emoji">💬</span>WhatsApp</div>
+            <div class="app-quick-btn" onclick="selectApp('Snapchat')"><span class="app-emoji">👻</span>Snapchat</div>
+            <div class="app-quick-btn" onclick="selectApp('Reddit')"><span class="app-emoji">🤖</span>Reddit</div>
+            <div class="app-quick-btn" onclick="selectApp('Facebook')"><span class="app-emoji">👍</span>Facebook</div>
+            <div class="app-quick-btn" onclick="selectApp('Other')"><span class="app-emoji">📱</span>Other</div>
+          </div>
+
+          <div class="log-form" style="margin-top:20px;">
+            <div class="log-field">
+              <label>App / Platform</label>
+              <input type="text" id="log-app" placeholder="e.g. Instagram" />
+            </div>
+            <div class="log-field">
+              <label>Duration (minutes)</label>
+              <input type="number" id="log-duration" placeholder="e.g. 45" min="1" max="600"/>
+            </div>
+            <div class="log-field">
+              <label>Time of day</label>
+              <select id="log-time">
+                <option value="morning">Morning (6am–12pm)</option>
+                <option value="afternoon">Afternoon (12pm–6pm)</option>
+                <option value="evening" selected>Evening (6pm–10pm)</option>
+                <option value="night">Late night (10pm–12am)</option>
+              </select>
+            </div>
+            <div class="log-field">
+              <label>How did it make you feel?</label>
+              <select id="log-mood">
+                <option value="great">😊 Great</option>
+                <option value="good">🙂 Good</option>
+                <option value="neutral">😐 Neutral</option>
+                <option value="bad">😕 Not great</option>
+                <option value="terrible">😟 Terrible</option>
+              </select>
+            </div>
+            <div class="log-field">
+              <label>Type</label>
+              <select id="log-type">
+                <option value="social">📱 Social Media</option>
+                <option value="entertainment">🎬 Entertainment</option>
+                <option value="education">📚 Education</option>
+                <option value="work">💼 Work/Study</option>
+                <option value="gaming">🎮 Gaming</option>
+              </select>
+            </div>
+            <button class="btn btn-cyan" onclick="logUsage()" style="width:100%;justify-content:center;">✓ Log This Session</button>
+          </div>
+        </div>
+
+        <div class="ws-panel">
+          <div class="ws-panel-title">Today's Log</div>
+          <div id="todayLog" style="font-size:13px;color:var(--text3);">No sessions logged today.</div>
+
+          <div style="margin-top:20px;">
+            <div class="ws-panel-title" style="margin-bottom:12px;">Phone Pickups</div>
+            <div class="pickup-row">
+              <div class="pickup-icon">📲</div>
+              <div>
+                <div class="pickup-val" id="pickupCount">0</div>
+                <div class="pickup-sub">times today</div>
+              </div>
+              <button class="btn btn-outline" onclick="addPickup()" style="margin-left:auto;padding:8px 16px;font-size:12px;">+ Add</button>
+            </div>
+            <div class="pickup-heatmap" id="pickupHeatmap"></div>
+            <div style="font-size:11px;color:var(--text3);margin-top:6px;">Hourly pickup intensity</div>
+          </div>
+
+          <div style="margin-top:20px;">
+            <div class="ws-panel-title" style="margin-bottom:12px;">🔥 Current Streak</div>
+            <div class="streak-display">
+              <div class="streak-fire">🔥</div>
+              <div>
+                <div style="display:flex;align-items:baseline;gap:6px;">
+                  <div class="streak-count" id="streakCount">0</div>
+                  <div class="streak-label">day streak</div>
+                </div>
+                <div style="font-size:11px;color:var(--text3);">Log daily to keep your streak!</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ REPORT VIEW ═══ -->
+    <div class="ws-view" id="view-report">
+      <div class="ws-page-header">
+        <div>
+          <div class="ws-page-title">Weekly Report</div>
+          <div class="ws-page-date">Personalised insights based on your usage</div>
+        </div>
+      </div>
+      <div id="reportContent">
+        <div style="padding:32px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);">
+          <div style="font-size:48px;margin-bottom:16px;">📊</div>
+          <div style="font-size:16px;font-weight:600;margin-bottom:8px;">No data yet</div>
+          <div style="font-size:13px;color:var(--text2);">Log your usage for a few days to generate personalised insights.</div>
+          <button class="btn btn-cyan" onclick="switchView('log')" style="margin-top:20px;">Start Logging →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ GOALS VIEW ═══ -->
+    <div class="ws-view" id="view-goals">
+      <div class="ws-page-header">
+        <div>
+          <div class="ws-page-title">Goals</div>
+          <div class="ws-page-date">Your digital wellness targets</div>
+        </div>
+      </div>
+
+      <div class="ws-panel" style="margin-bottom:20px;">
+        <div class="ws-panel-title">Active Goals</div>
+        <div id="goalsList">
+          <div class="goal-item">
+            <div class="goal-icon">⏱️</div>
+            <div class="goal-info">
+              <div class="goal-name">Social Media &lt; 2h/day</div>
+              <div class="goal-progress-wrap">
+                <div class="goal-bar-track"><div class="goal-bar-fill" id="goal-bar-time" style="width:0%;background:var(--green);"></div></div>
+                <div class="goal-pct" id="goal-pct-time">0%</div>
+              </div>
+            </div>
+            <div class="goal-status" id="goal-status-time">⏳</div>
+          </div>
+          <div class="goal-item">
+            <div class="goal-icon">😴</div>
+            <div class="goal-info">
+              <div class="goal-name">No phone after 10pm</div>
+              <div class="goal-progress-wrap">
+                <div class="goal-bar-track"><div class="goal-bar-fill" id="goal-bar-sleep" style="width:0%;background:var(--blue);"></div></div>
+                <div class="goal-pct" id="goal-pct-sleep">0%</div>
+              </div>
+            </div>
+            <div class="goal-status" id="goal-status-sleep">⏳</div>
+          </div>
+          <div class="goal-item">
+            <div class="goal-icon">📵</div>
+            <div class="goal-info">
+              <div class="goal-name">Phone pickups &lt; 20/day</div>
+              <div class="goal-progress-wrap">
+                <div class="goal-bar-track"><div class="goal-bar-fill" id="goal-bar-pickups" style="width:0%;background:var(--cyan);"></div></div>
+                <div class="goal-pct" id="goal-pct-pickups">0%</div>
+              </div>
+            </div>
+            <div class="goal-status" id="goal-status-pickups">⏳</div>
+          </div>
+          <div class="goal-item">
+            <div class="goal-icon">🎯</div>
+            <div class="goal-info">
+              <div class="goal-name">Log usage 7 days in a row</div>
+              <div class="goal-progress-wrap">
+                <div class="goal-bar-track"><div class="goal-bar-fill" id="goal-bar-streak" style="width:0%;background:var(--amber);"></div></div>
+                <div class="goal-pct" id="goal-pct-streak">0%</div>
+              </div>
+            </div>
+            <div class="goal-status" id="goal-status-streak">⏳</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CHALLENGES VIEW ═══ -->
+    <div class="ws-view" id="view-challenges">
+      <div class="ws-page-header">
+        <div>
+          <div class="ws-page-title">Daily Challenges</div>
+          <div class="ws-page-date">Complete challenges to earn points & badges</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:24px;font-weight:800;color:var(--amber);" id="totalPoints">0 pts</div>
+          <div style="font-size:11px;color:var(--text3);">total points</div>
+        </div>
+      </div>
+
+      <div class="ws-panel" style="margin-bottom:16px;">
+        <div class="ws-panel-title">Today's Challenges</div>
+        <div id="challengesList">
+          <div class="challenge-item" id="ch-1">
+            <div class="challenge-emoji">📵</div>
+            <div class="challenge-info">
+              <div class="challenge-title">No social media before 9am</div>
+              <div class="challenge-desc">Start your day without checking your feeds. Boosts morning focus.</div>
+            </div>
+            <div>
+              <div class="challenge-points">+25 pts</div>
+              <button class="btn btn-outline" onclick="completeChallenge(1, 25)" style="margin-top:6px;padding:5px 12px;font-size:11px;" id="ch-btn-1">Complete</button>
+            </div>
+          </div>
+          <div class="challenge-item" id="ch-2">
+            <div class="challenge-emoji">⏰</div>
+            <div class="challenge-info">
+              <div class="challenge-title">Take a 30-min social media break</div>
+              <div class="challenge-desc">Step away from your phone for 30 minutes and do something offline.</div>
+            </div>
+            <div>
+              <div class="challenge-points">+20 pts</div>
+              <button class="btn btn-outline" onclick="completeChallenge(2, 20)" style="margin-top:6px;padding:5px 12px;font-size:11px;" id="ch-btn-2">Complete</button>
+            </div>
+          </div>
+          <div class="challenge-item" id="ch-3">
+            <div class="challenge-emoji">📚</div>
+            <div class="challenge-info">
+              <div class="challenge-title">Replace 30 mins scrolling with reading</div>
+              <div class="challenge-desc">Swap passive scrolling for a book, article, or podcast.</div>
+            </div>
+            <div>
+              <div class="challenge-points">+30 pts</div>
+              <button class="btn btn-outline" onclick="completeChallenge(3, 30)" style="margin-top:6px;padding:5px 12px;font-size:11px;" id="ch-btn-3">Complete</button>
+            </div>
+          </div>
+          <div class="challenge-item" id="ch-4">
+            <div class="challenge-emoji">🌙</div>
+            <div class="challenge-info">
+              <div class="challenge-title">Phone-free hour before bed</div>
+              <div class="challenge-desc">Put your phone away 1 hour before sleep for better rest.</div>
+            </div>
+            <div>
+              <div class="challenge-points">+35 pts</div>
+              <button class="btn btn-outline" onclick="completeChallenge(4, 35)" style="margin-top:6px;padding:5px 12px;font-size:11px;" id="ch-btn-4">Complete</button>
+            </div>
+          </div>
+          <div class="challenge-item" id="ch-5">
+            <div class="challenge-emoji">🧘</div>
+            <div class="challenge-info">
+              <div class="challenge-title">5-minute mindful breathing</div>
+              <div class="challenge-desc">Take 5 minutes to breathe deeply and check in with how social media affects your mood today.</div>
+            </div>
+            <div>
+              <div class="challenge-points">+15 pts</div>
+              <button class="btn btn-outline" onclick="completeChallenge(5, 15)" style="margin-top:6px;padding:5px 12px;font-size:11px;" id="ch-btn-5">Complete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BREATHING EXERCISE -->
+      <div class="ws-panel">
+        <div class="ws-panel-title">🧘 Breathing Exercise</div>
+        <div id="breatheWidget" style="text-align:center;padding:20px 0;">
+          <div id="breatheCircle" style="width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(0,245,212,.3),rgba(67,97,238,.1));border:2px solid rgba(0,245,212,.3);margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:var(--cyan);transition:all 4s ease;">
+            BREATHE
+          </div>
+          <div id="breatheText" style="font-size:13px;color:var(--text2);margin-bottom:12px;">Press start to begin a 1-minute calming exercise</div>
+          <button class="btn btn-outline" onclick="startBreathing()" id="breatheBtn" style="font-size:13px;padding:10px 24px;">▶ Start</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ BADGES VIEW ═══ -->
+    <div class="ws-view" id="view-badges">
+      <div class="ws-page-header">
+        <div>
+          <div class="ws-page-title">Achievements</div>
+          <div class="ws-page-date">Earn badges by tracking your wellness</div>
+        </div>
+      </div>
+
+      <div class="ws-panel">
+        <div class="ws-panel-title">Your Badges</div>
+        <div class="badge-grid">
+          <div class="badge-item">
+            <div class="badge-icon locked" id="badge-first">🌱</div>
+            <div class="badge-name">First Log</div>
+          </div>
+          <div class="badge-item">
+            <div class="badge-icon locked" id="badge-streak3">🔥</div>
+            <div class="badge-name">3-Day Streak</div>
+          </div>
+          <div class="badge-item">
+            <div class="badge-icon locked" id="badge-streak7">⚡</div>
+            <div class="badge-name">7-Day Streak</div>
+          </div>
+          <div class="badge-item">
+            <div class="badge-icon locked" id="badge-limit">🎯</div>
+            <div class="badge-name">Under Limit</div>
+          </div>
+          <div class="badge-item">
+            <div class="badge-icon locked" id="badge-mindful">🧘</div>
+            <div class="badge-name">Mindful</div>
+          </div>
+          <div class="badge-item">
+            <div class="badge-icon locked" id="badge-quiz">🎓</div>
+            <div class="badge-name">Quiz Master</div>
+          </div>
+          <div class="badge-item">
+            <div class="badge-icon locked" id="badge-challenges">⚔️</div>
+            <div class="badge-name">Challenger</div>
+          </div>
+          <div class="badge-item">
+            <div class="badge-icon locked" id="badge-champ">🏆</div>
+            <div class="badge-name">Wellness Champ</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+// ── STATE ──
+let state = {
+  today: [],        // today's log entries
+  weekly: [],       // last 7 days totals
+  pickups: 0,
+  pickupHours: new Array(24).fill(0),
+  streak: 0,
+  totalPoints: 0,
+  dailyLimit: 2,    // hours
+  completedChallenges: [],
+  earnedBadges: [],
+};
+
+// ── INIT ──
+function init() {
+  document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-GB', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+  buildHeatmap();
+  buildHourlyChart();
+  buildPickupHeatmap();
+  renderGoals();
+  loadFromStorage();
+}
+
+function loadFromStorage() {
+  const saved = localStorage.getItem('ss_wellness');
+  if (saved) {
+    try { Object.assign(state, JSON.parse(saved)); } catch(e) {}
+  }
+  updateAllViews();
+}
+
+function saveState() {
+  localStorage.setItem('ss_wellness', JSON.stringify(state));
+}
+
+// ── VIEW SWITCHING ──
+function switchView(name) {
+  document.querySelectorAll('.ws-view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.ws-nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  document.querySelectorAll('.ws-nav-item').forEach(n => {
+    if (n.textContent.toLowerCase().includes(name.toLowerCase()) || n.getAttribute('onclick')?.includes(name)) {
+      n.classList.add('active');
+    }
+  });
+}
+
+// ── APP SELECT ──
+function selectApp(name) {
+  document.getElementById('log-app').value = name;
+  document.querySelectorAll('.app-quick-btn').forEach(b => b.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+}
+
+// ── LOG USAGE ──
+function logUsage() {
+  const app = document.getElementById('log-app').value.trim();
+  const dur = parseInt(document.getElementById('log-duration').value);
+  const time = document.getElementById('log-time').value;
+  const mood = document.getElementById('log-mood').value;
+  const type = document.getElementById('log-type').value;
+
+  if (!app) { showToast('Please select or enter an app', 'error'); return; }
+  if (!dur || dur < 1) { showToast('Please enter a valid duration', 'error'); return; }
+
+  const entry = { app, duration: dur, time, mood, type, timestamp: new Date().toISOString() };
+  state.today.unshift(entry);
+
+  // Update weekly
+  const today = new Date().toDateString();
+  const todayWeekly = state.weekly.find(w => w.date === today);
+  if (todayWeekly) {
+    if (type === 'social') todayWeekly.social += dur;
+    else todayWeekly.other += dur;
+  } else {
+    state.weekly.push({ date: today, social: type === 'social' ? dur : 0, other: type !== 'social' ? dur : 0 });
+    if (state.weekly.length > 7) state.weekly.shift();
+  }
+
+  // Streak
+  if (state.today.length === 1) { // First log today
+    state.streak += 1;
+  }
+
+  // Check badges
+  checkBadges();
+  saveState();
+  updateAllViews();
+  showToast(`✓ Logged ${dur}m of ${app}`, 'success');
+
+  // Reset form
+  document.getElementById('log-app').value = '';
+  document.getElementById('log-duration').value = '';
+  document.querySelectorAll('.app-quick-btn').forEach(b => b.classList.remove('selected'));
+}
+
+// ── ADD PICKUP ──
+function addPickup() {
+  state.pickups++;
+  const hour = new Date().getHours();
+  state.pickupHours[hour] = (state.pickupHours[hour] || 0) + 1;
+  saveState();
+  updatePickupDisplay();
+  showToast(`📲 Pickup logged (${state.pickups} today)`, 'info');
+}
+
+function updatePickupDisplay() {
+  document.getElementById('pickupCount').textContent = state.pickups;
+  document.getElementById('stat-pickups').textContent = state.pickups;
+  renderPickupHeatmap();
+}
+
+// ── HEATMAP ──
+function buildHeatmap() {
+  const grid = document.getElementById('heatmapGrid');
+  grid.innerHTML = '';
+  for (let h = 0; h < 24; h++) {
+    const cell = document.createElement('div');
+    cell.className = 'hm-cell';
+    cell.id = `hm-${h}`;
+    cell.setAttribute('data-tip', `${h}:00 — no data`);
+    grid.appendChild(cell);
+  }
+}
+
+function updateHeatmap() {
+  const todayEntries = state.today;
+  const hourMap = {};
+  const timeSlots = { morning: [6,7,8,9,10,11], afternoon: [12,13,14,15,16,17], evening: [18,19,20,21], night: [22,23,0,1] };
+  todayEntries.forEach(e => {
+    const hours = timeSlots[e.time] || [12];
+    const perHour = e.duration / hours.length;
+    hours.forEach(h => { hourMap[h] = (hourMap[h] || 0) + perHour; });
+  });
+  const maxVal = Math.max(...Object.values(hourMap), 1);
+  for (let h = 0; h < 24; h++) {
+    const cell = document.getElementById(`hm-${h}`);
+    if (!cell) continue;
+    const val = hourMap[h] || 0;
+    const intensity = val === 0 ? 0 : Math.ceil((val / maxVal) * 5);
+    cell.setAttribute('data-intensity', intensity);
+    cell.setAttribute('data-tip', `${h}:00 — ${Math.round(val)}min`);
+  }
+}
+
+// ── HOURLY CHART ──
+function buildHourlyChart() {
+  const chart = document.getElementById('hourlyChart');
+  chart.innerHTML = '';
+  const now = new Date().getHours();
+  for (let h = 0; h < 24; h++) {
+    const bar = document.createElement('div');
+    bar.className = 'hr-bar' + (h === now ? ' now' : '');
+    bar.id = `hr-${h}`;
+    bar.style.height = '4px';
+    chart.appendChild(bar);
+  }
+}
+
+function updateHourlyChart() {
+  const timeSlots = { morning: [6,7,8,9,10,11], afternoon: [12,13,14,15,16,17], evening: [18,19,20,21], night: [22,23,0,1] };
+  const hourMap = {};
+  state.today.forEach(e => {
+    const hours = timeSlots[e.time] || [12];
+    const perHour = e.duration / hours.length;
+    hours.forEach(h => { hourMap[h] = (hourMap[h] || 0) + perHour; });
+  });
+  const maxVal = Math.max(...Object.values(hourMap), 30);
+  for (let h = 0; h < 24; h++) {
+    const bar = document.getElementById(`hr-${h}`);
+    if (!bar) continue;
+    const pct = Math.max(4, ((hourMap[h] || 0) / maxVal) * 100);
+    bar.style.height = pct + '%';
+    if ((hourMap[h] || 0) > maxVal * 0.7) bar.classList.add('peak');
+  }
+}
+
+// ── WEEKLY CHART ──
+function updateWeeklyChart() {
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const todayIdx = (new Date().getDay() + 6) % 7;
+  const groups = document.querySelectorAll('.wc-bar-group');
+  const maxHours = 8;
+  const recent = state.weekly.slice(-7);
+  groups.forEach((g, idx) => {
+    const dayData = recent[idx];
+    const socialH = dayData ? dayData.social / 60 : 0;
+    const otherH = dayData ? dayData.other / 60 : 0;
+    const total = socialH + otherH;
+    const socialPct = (socialH / maxHours) * 100;
+    const otherPct = (otherH / maxHours) * 100;
+    const bars = g.querySelectorAll('.wc-bar');
+    if (bars[0]) { bars[0].style.height = Math.max(2, socialPct) + '%'; bars[0].setAttribute('data-tip', `${days[idx]}: ${socialH.toFixed(1)}h social`); }
+    if (bars[1]) { bars[1].style.height = Math.max(2, otherPct) + '%'; bars[1].setAttribute('data-tip', `${days[idx]}: ${otherH.toFixed(1)}h other`); }
+  });
+}
+
+// ── PICKUP HEATMAP ──
+function buildPickupHeatmap() {
+  const container = document.getElementById('pickupHeatmap');
+  container.innerHTML = '';
+  for (let h = 0; h < 24; h++) {
+    const cell = document.createElement('div');
+    cell.className = 'ph-cell';
+    cell.id = `ph-${h}`;
+    container.appendChild(cell);
+  }
+}
+
+function renderPickupHeatmap() {
+  const max = Math.max(...state.pickupHours, 1);
+  for (let h = 0; h < 24; h++) {
+    const cell = document.getElementById(`ph-${h}`);
+    if (!cell) continue;
+    const pct = (state.pickupHours[h] / max) * 100;
+    const alpha = 0.1 + (pct / 100) * 0.8;
+    cell.style.background = `rgba(0,245,212,${alpha})`;
+  }
+}
+
+// ── TOTALS ──
+function getTotals() {
+  const social = state.today.filter(e => e.type === 'social').reduce((s, e) => s + e.duration, 0);
+  const total = state.today.reduce((s, e) => s + e.duration, 0);
+  return { social, total, other: total - social };
+}
+
+function formatDuration(mins) {
+  if (mins < 60) return mins + 'm';
+  return Math.floor(mins/60) + 'h ' + (mins%60 > 0 ? (mins%60) + 'm' : '');
+}
+
+// ── WELLNESS SCORE ──
+function calcWellnessScore() {
+  const { social, total } = getTotals();
+  if (total === 0) return null;
+  const limitMins = state.dailyLimit * 60;
+  const timePenalty = Math.max(0, (social - limitMins) / limitMins * 30);
+  const nightPenalty = state.today.filter(e => e.time === 'night').length * 10;
+  const moodBonus = state.today.reduce((s, e) => s + ({'great':10,'good':5,'neutral':0,'bad':-5,'terrible':-10}[e.mood] || 0), 0);
+  const pickupPenalty = Math.max(0, (state.pickups - 20) * 0.5);
+  const raw = 75 - timePenalty - nightPenalty - pickupPenalty + Math.min(15, moodBonus);
+  return Math.round(Math.max(5, Math.min(100, raw)));
+}
+
+function getDimScores() {
+  const { social } = getTotals();
+  const limitMins = state.dailyLimit * 60;
+  const ratio = social / Math.max(limitMins, 1);
+  const hasNight = state.today.some(e => e.time === 'night');
+  const moodAvg = state.today.length > 0 ? state.today.reduce((s,e) => s + ({'great':5,'good':4,'neutral':3,'bad':2,'terrible':1}[e.mood]||3), 0) / state.today.length : null;
+  return {
+    sleep: hasNight ? '😴 At Risk' : (state.today.length > 0 ? '✅ Good' : '—'),
+    focus: ratio > 1.5 ? '⚠️ Low' : (state.today.length > 0 ? '✅ OK' : '—'),
+    mood: moodAvg ? (moodAvg >= 4 ? '😊 Great' : moodAvg >= 3 ? '😐 OK' : '😟 Low') : '—',
+    social: state.today.filter(e=>e.type==='social').length > 0 ? (ratio < 0.8 ? '✅ Balanced' : '⚠️ High') : '—'
+  };
+}
+
+// ── UPDATE ALL ──
+function updateAllViews() {
+  const { social, total, other } = getTotals();
+  const score = calcWellnessScore();
+  const dims = getDimScores();
+
+  // Stats
+  document.getElementById('stat-total').textContent = formatDuration(total);
+  document.getElementById('stat-social').textContent = formatDuration(social);
+  document.getElementById('stat-social-pct').textContent = total > 0 ? Math.round(social/total*100) + '% of total' : '0% of total';
+  document.getElementById('stat-pickups').textContent = state.pickups;
+
+  // Limit status
+  const limitMins = state.dailyLimit * 60;
+  if (total > 0) {
+    const remaining = limitMins - social;
+    const el = document.getElementById('stat-limit-status');
+    const sub = document.getElementById('stat-limit-sub');
+    if (remaining < 0) {
+      el.textContent = '⚠️ Over'; el.style.color = 'var(--red)';
+      sub.textContent = `${formatDuration(Math.abs(remaining))} over limit`;
+    } else {
+      el.textContent = '✅ OK'; el.style.color = 'var(--green)';
+      sub.textContent = `${formatDuration(remaining)} remaining`;
+    }
+  }
+
+  // Wellness score
+  if (score !== null) {
+    document.getElementById('wellbeingScore').textContent = score;
+    document.getElementById('sideScoreNum').textContent = score;
+    const dashoffset = 301.6 * (1 - score / 100);
+    document.getElementById('wellbeingRing').style.strokeDashoffset = dashoffset;
+    const sideOffset = 150.8 * (1 - score / 100);
+    document.getElementById('sideScoreRing').style.strokeDashoffset = sideOffset;
+    const msg = score >= 75 ? '🌟 Great job! Keep it up.' : score >= 50 ? '😊 Doing well, watch your screen time.' : '⚠️ High usage detected. Time to take a break.';
+    document.getElementById('wellbeingMsg').textContent = msg;
+    document.querySelector('.ws-score-label').textContent = score >= 75 ? 'Excellent' : score >= 50 ? 'Moderate' : 'Needs work';
+  }
+
+  // Dims
+  document.getElementById('dim-sleep').textContent = dims.sleep;
+  document.getElementById('dim-focus').textContent = dims.focus;
+  document.getElementById('dim-mood').textContent = dims.mood;
+  document.getElementById('dim-social').textContent = dims.social;
+
+  // Charts
+  updateWeeklyChart();
+  updateHeatmap();
+  updateHourlyChart();
+  updatePickupDisplay();
+  renderTodayLog();
+  renderAppBreakdown();
+  renderTodayApps();
+  renderGoals();
+  renderReport();
+
+  // Streak
+  document.getElementById('streakCount').textContent = state.streak;
+  document.getElementById('totalPoints').textContent = state.totalPoints + ' pts';
+}
+
+// ── TODAY LOG ──
+function renderTodayLog() {
+  const el = document.getElementById('todayLog');
+  if (!state.today.length) { el.innerHTML = '<div style="color:var(--text3);font-size:13px;">No sessions logged today.</div>'; return; }
+  const moodEmojis = { great:'😊', good:'🙂', neutral:'😐', bad:'😕', terrible:'😟' };
+  el.innerHTML = state.today.map((e, i) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);">
+      <span style="font-size:16px;">${moodEmojis[e.mood] || '😐'}</span>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:500;">${e.app} — ${e.duration}min</div>
+        <div style="font-size:11px;color:var(--text3);">${e.time} · ${e.type}</div>
+      </div>
+      <button onclick="removeEntry(${i})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:4px;">×</button>
+    </div>
+  `).join('');
+}
+
+function removeEntry(idx) {
+  state.today.splice(idx, 1);
+  saveState();
+  updateAllViews();
+}
+
+// ── APP BREAKDOWN ──
+const APP_COLORS = { Instagram:'#e1306c', TikTok:'#ff0050', YouTube:'#ff0000', 'Twitter/X':'#1da1f2', WhatsApp:'#25d366', Snapchat:'#fffc00', Reddit:'#ff4500', Facebook:'#1877f2' };
+const APP_EMOJIS = { Instagram:'📸', TikTok:'🎵', YouTube:'▶️', 'Twitter/X':'🐦', WhatsApp:'💬', Snapchat:'👻', Reddit:'🤖', Facebook:'👍' };
+
+function renderAppBreakdown() {
+  const el = document.getElementById('appBreakdownList');
+  if (!state.today.length) { el.innerHTML = '<div style="font-size:13px;color:var(--text3);text-align:center;padding:20px;">No apps logged yet — go to Log usage</div>'; return; }
+  const appMap = {};
+  state.today.forEach(e => { appMap[e.app] = (appMap[e.app] || 0) + e.duration; });
+  const sorted = Object.entries(appMap).sort((a,b) => b[1]-a[1]);
+  const max = sorted[0][1];
+  el.innerHTML = sorted.map(([app, mins]) => `
+    <div class="app-row">
+      <div class="app-icon" style="background:${APP_COLORS[app] || 'rgba(255,255,255,.1)'}22;">${APP_EMOJIS[app] || '📱'}</div>
+      <div class="app-name">${app}</div>
+      <div class="app-bar-wrap">
+        <div class="app-bar-track">
+          <div class="app-bar-fill" style="width:${(mins/max)*100}%;background:${APP_COLORS[app] || 'var(--cyan)'};"></div>
+        </div>
+      </div>
+      <div class="app-time">${formatDuration(mins)}</div>
+    </div>
+  `).join('');
+}
+
+function renderTodayApps() {
+  const el = document.getElementById('todayApps');
+  if (!state.today.length) { el.textContent = 'No apps logged yet — go to Log usage'; return; }
+  const apps = [...new Set(state.today.map(e => (APP_EMOJIS[e.app] || '📱') + ' ' + e.app))];
+  el.innerHTML = apps.map(a => `<span style="display:inline-block;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:12px;margin:3px;">${a}</span>`).join('');
+}
+
+// ── GOALS ──
+function renderGoals() {
+  const { social } = getTotals();
+  const limitMins = state.dailyLimit * 60;
+
+  // Time goal
+  const timePct = social > 0 ? Math.min(100, (social / limitMins) * 100) : 0;
+  const timeOk = social <= limitMins && state.today.length > 0;
+  setGoal('time', timePct, timeOk ? 'var(--green)' : 'var(--red)', timeOk ? '✅' : (state.today.length > 0 ? '❌' : '⏳'));
+
+  // Sleep goal
+  const hasNight = state.today.some(e => e.time === 'night');
+  const sleepOk = !hasNight && state.today.length > 0;
+  setGoal('sleep', state.today.length > 0 ? (sleepOk ? 100 : 30) : 0, sleepOk ? 'var(--blue)' : 'var(--red)', sleepOk ? '✅' : (state.today.length > 0 ? '❌' : '⏳'));
+
+  // Pickups goal
+  const pickupPct = Math.min(100, (state.pickups / 20) * 100);
+  const pickupsOk = state.pickups < 20 && state.pickups > 0;
+  setGoal('pickups', pickupPct, pickupsOk ? 'var(--cyan)' : 'var(--red)', pickupsOk ? '✅' : (state.pickups > 0 ? '❌' : '⏳'));
+
+  // Streak goal
+  const streakPct = Math.min(100, (state.streak / 7) * 100);
+  setGoal('streak', streakPct, 'var(--amber)', state.streak >= 7 ? '🏆' : '⏳');
+}
+
+function setGoal(name, pct, color, status) {
+  const bar = document.getElementById(`goal-bar-${name}`);
+  const pctEl = document.getElementById(`goal-pct-${name}`);
+  const statusEl = document.getElementById(`goal-status-${name}`);
+  if (bar) { bar.style.width = pct + '%'; bar.style.background = color; }
+  if (pctEl) pctEl.textContent = Math.round(pct) + '%';
+  if (statusEl) statusEl.textContent = status;
+}
+
+// ── REPORT ──
+function renderReport() {
+  const el = document.getElementById('reportContent');
+  const { social, total } = getTotals();
+  if (!state.today.length) return;
+
+  const score = calcWellnessScore();
+  const limitMins = state.dailyLimit * 60;
+  const overLimit = social > limitMins;
+  const hasNight = state.today.some(e => e.time === 'night');
+  const topApp = [...state.today].sort((a,b) => b.duration - a.duration)[0];
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;">
+      <div class="ws-stat-card"><div class="ws-stat-label">Wellness Score</div><div class="ws-stat-value" style="color:${score >= 70 ? 'var(--green)' : score >= 45 ? 'var(--amber)' : 'var(--red)'};">${score}/100</div></div>
+      <div class="ws-stat-card"><div class="ws-stat-label">Social Media</div><div class="ws-stat-value">${formatDuration(social)}</div><div class="ws-stat-sub">${overLimit ? '⚠️ Over limit' : '✅ Within limit'}</div></div>
+      <div class="ws-stat-card"><div class="ws-stat-label">Most Used App</div><div class="ws-stat-value" style="font-size:18px;">${topApp ? topApp.app : '—'}</div></div>
+    </div>
+
+    <div style="margin-bottom:14px;"><div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">AI Insights</div>
+    ${overLimit ? `<div class="report-insight"><div class="ri-header"><div class="ri-icon">⏱️</div><div class="ri-title">Over your daily limit</div><div class="ri-badge warn">Action needed</div></div><div class="ri-desc">You've spent ${formatDuration(social)} on social media today, which is ${formatDuration(social-limitMins)} over your ${state.dailyLimit}h limit. Try setting app timers or using grayscale mode to reduce usage.</div></div>` : `<div class="report-insight"><div class="ri-header"><div class="ri-icon">✅</div><div class="ri-title">Within your daily limit</div><div class="ri-badge ok">On track</div></div><div class="ri-desc">Great discipline! You've stayed within your ${state.dailyLimit}h social media limit today. Keep this momentum going.</div></div>`}
+    ${hasNight ? `<div class="report-insight"><div class="ri-header"><div class="ri-icon">🌙</div><div class="ri-title">Late-night screen time detected</div><div class="ri-badge warn">Sleep risk</div></div><div class="ri-desc">Using devices after 10pm suppresses melatonin and delays your sleep cycle. Put your phone on charge in another room before bed.</div></div>` : ''}
+    ${state.pickups > 30 ? `<div class="report-insight"><div class="ri-header"><div class="ri-icon">📲</div><div class="ri-title">High phone pickups</div><div class="ri-badge warn">Habit alert</div></div><div class="ri-desc">${state.pickups} pickups today indicates compulsive checking behaviour. Try turning off non-essential notifications and using focus modes.</div></div>` : ''}
+    <div class="report-insight"><div class="ri-header"><div class="ri-icon">💡</div><div class="ri-title">Tip for tomorrow</div><div class="ri-badge info">Suggestion</div></div><div class="ri-desc">Try the 20-20-20 rule: every 20 minutes, look at something 20 feet away for 20 seconds. It reduces digital eye strain significantly.</div></div>
+    </div>
+  `;
+}
+
+// ── DAILY LIMIT ──
+function updateLimit(val) {
+  document.getElementById('limitVal').textContent = val + 'h';
+  const { social } = getTotals();
+  const remaining = (parseFloat(val) * 60) - social;
+  document.getElementById('limitStatus').textContent = social > 0 ? (remaining > 0 ? `${formatDuration(remaining)} remaining today` : `${formatDuration(Math.abs(remaining))} over limit`) : `${val} hours daily goal`;
+}
+
+function saveLimit() {
+  state.dailyLimit = parseFloat(document.getElementById('limitSlider').value);
+  saveState();
+  updateAllViews();
+  showToast(`✓ Daily limit set to ${state.dailyLimit}h`, 'success');
+}
+
+// ── CHALLENGES ──
+function completeChallenge(id, points) {
+  if (state.completedChallenges.includes(id)) return;
+  state.completedChallenges.push(id);
+  state.totalPoints += points;
+  const item = document.getElementById(`ch-${id}`);
+  const btn = document.getElementById(`ch-btn-${id}`);
+  if (item) { item.style.opacity = '.5'; item.style.pointerEvents = 'none'; }
+  if (btn) { btn.textContent = '✓ Done'; btn.style.color = 'var(--green)'; btn.style.borderColor = 'var(--green)'; }
+  checkBadges();
+  saveState();
+  document.getElementById('totalPoints').textContent = state.totalPoints + ' pts';
+  showToast(`+${points} pts earned! 🎉`, 'success');
+}
+
+// ── BADGES ──
+function checkBadges() {
+  const earn = (id) => {
+    if (state.earnedBadges.includes(id)) return;
+    state.earnedBadges.push(id);
+    const el = document.getElementById('badge-' + id);
+    if (el) { el.classList.remove('locked'); el.classList.add('earned'); }
+    showToast(`🏆 Badge unlocked: ${id}!`, 'success');
+  };
+  if (state.today.length >= 1) earn('first');
+  if (state.streak >= 3) earn('streak3');
+  if (state.streak >= 7) earn('streak7');
+  if (state.completedChallenges.includes(5)) earn('mindful');
+  if (state.completedChallenges.length >= 3) earn('challenges');
+  const { social } = getTotals();
+  if (social > 0 && social <= state.dailyLimit * 60) earn('limit');
+}
+
+function restoreBadges() {
+  state.earnedBadges.forEach(id => {
+    const el = document.getElementById('badge-' + id);
+    if (el) { el.classList.remove('locked'); el.classList.add('earned'); }
+  });
+  state.completedChallenges.forEach(id => {
+    const btn = document.getElementById(`ch-btn-${id}`);
+    const item = document.getElementById(`ch-${id}`);
+    if (btn) { btn.textContent = '✓ Done'; btn.style.color = 'var(--green)'; btn.style.borderColor = 'var(--green)'; }
+    if (item) { item.style.opacity = '.5'; item.style.pointerEvents = 'none'; }
+  });
+  document.getElementById('totalPoints').textContent = state.totalPoints + ' pts';
+}
+
+// ── BREATHING EXERCISE ──
+let breathingInterval;
+function startBreathing() {
+  const circle = document.getElementById('breatheCircle');
+  const text = document.getElementById('breatheText');
+  const btn = document.getElementById('breatheBtn');
+  btn.textContent = '⏹ Stop';
+  btn.setAttribute('onclick', 'stopBreathing()');
+
+  let phase = 0;
+  const phases = [
+    { label: 'Inhale...', duration: 4000, scale: '1.4', opacity: '1' },
+    { label: 'Hold...', duration: 4000, scale: '1.4', opacity: '.7' },
+    { label: 'Exhale...', duration: 4000, scale: '1', opacity: '.5' },
+    { label: 'Hold...', duration: 2000, scale: '1', opacity: '.4' },
+  ];
+  let totalTime = 60;
+  let elapsed = 0;
+
+  function nextPhase() {
+    const p = phases[phase % phases.length];
+    circle.style.transform = `scale(${p.scale})`;
+    circle.style.opacity = p.opacity;
+    circle.textContent = p.label;
+    text.textContent = `${p.label} — ${totalTime - elapsed}s remaining`;
+    phase++;
+    elapsed += p.duration / 1000;
+    if (elapsed >= totalTime) { stopBreathing(); return; }
+    breathingInterval = setTimeout(nextPhase, p.duration);
+  }
+  nextPhase();
+}
+
+function stopBreathing() {
+  clearTimeout(breathingInterval);
+  const circle = document.getElementById('breatheCircle');
+  const btn = document.getElementById('breatheBtn');
+  circle.style.transform = 'scale(1)';
+  circle.style.opacity = '1';
+  circle.textContent = 'BREATHE';
+  document.getElementById('breatheText').textContent = 'Press start to begin a 1-minute calming exercise';
+  btn.textContent = '▶ Start';
+  btn.setAttribute('onclick', 'startBreathing()');
+  completeChallenge(5, 15);
+}
+
+// ── STARTUP ──
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+  restoreBadges();
+  updateLimit(2);
+});
+</script>
+{% endblock %}

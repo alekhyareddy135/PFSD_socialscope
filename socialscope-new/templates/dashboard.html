@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+{% block title %}Live Dashboard{% endblock %}
+{% block content %}
+
+<div class="page-hero">
+  <div class="container page-hero-content">
+    <div class="overline">Live Analytics</div>
+    <h1>Research <span style="color:var(--cyan);">Dashboard</span></h1>
+    <p>Real-time statistics from the NLP analysis engine and community survey — all stored in MongoDB. Data updates every 10 seconds.</p>
+  </div>
+</div>
+
+<div class="container" style="padding-bottom:80px;">
+
+  <!-- LIVE METRICS -->
+  <div class="dash-section">
+    <div class="dash-section-title">Live metrics <span id="lastUpdate" style="color:var(--text3);text-transform:none;letter-spacing:0;font-weight:400;">— updating...</span></div>
+    <div class="dashboard-grid">
+      <div class="metric-card">
+        <div class="metric-label">Total Analyses</div>
+        <div class="metric-value cyan" id="m-total">—</div>
+        <div class="metric-sub">NLP runs this session</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Positive Results</div>
+        <div class="metric-value green" id="m-pos">—</div>
+        <div class="metric-sub">% of all analyses</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Negative Results</div>
+        <div class="metric-value red" id="m-neg">—</div>
+        <div class="metric-sub">% of all analyses</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Neutral Results</div>
+        <div class="metric-value amber" id="m-neu">—</div>
+        <div class="metric-sub">% of all analyses</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SENTIMENT DISTRIBUTION -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px;">
+    <div style="padding:24px;border-radius:var(--r-lg);background:var(--surface);border:1px solid var(--border);">
+      <div class="dash-section-title">Sentiment distribution</div>
+      <div class="sent-bars" id="sentBars">
+        <div class="sent-bar-row">
+          <div class="sent-bar-name">Positive</div>
+          <div class="sent-bar-track"><div class="sent-bar-fill" id="sb-pos" style="width:0%;background:var(--green);"></div></div>
+          <div class="sent-bar-pct" id="sbp-pos">0%</div>
+        </div>
+        <div class="sent-bar-row">
+          <div class="sent-bar-name">Negative</div>
+          <div class="sent-bar-track"><div class="sent-bar-fill" id="sb-neg" style="width:0%;background:var(--red);"></div></div>
+          <div class="sent-bar-pct" id="sbp-neg">0%</div>
+        </div>
+        <div class="sent-bar-row">
+          <div class="sent-bar-name">Neutral</div>
+          <div class="sent-bar-track"><div class="sent-bar-fill" id="sb-neu" style="width:0%;background:var(--amber);"></div></div>
+          <div class="sent-bar-pct" id="sbp-neu">0%</div>
+        </div>
+      </div>
+      <div style="margin-top:20px;padding:14px;background:var(--surface2);border-radius:var(--r-sm);font-size:13px;color:var(--text2);">
+        Analyses are saved to MongoDB with timestamps, enabling trend analysis over time.
+      </div>
+    </div>
+
+    <!-- COMMUNITY SURVEY -->
+    <div style="padding:24px;border-radius:var(--r-lg);background:var(--surface);border:1px solid var(--border);">
+      <div class="dash-section-title">Community survey</div>
+      <div id="surveyForm">
+        <div class="survey-field">
+          <label>Age group</label>
+          <select id="sv-age">
+            <option value="">Select...</option>
+            <option>Under 13</option><option>13-15</option><option>16-17</option>
+            <option>18-24 (parent/teacher)</option><option>25+ (parent/teacher)</option>
+          </select>
+        </div>
+        <div class="survey-field">
+          <label>Daily social media hours</label>
+          <select id="sv-hours">
+            <option value="">Select...</option>
+            <option>Under 1 hour</option><option>1-2 hours</option>
+            <option>2-4 hours</option><option>4-6 hours</option><option>6+ hours</option>
+          </select>
+        </div>
+        <div class="survey-field">
+          <label>Primary platform</label>
+          <select id="sv-platform">
+            <option value="">Select...</option>
+            <option>Instagram</option><option>TikTok</option><option>YouTube</option>
+            <option>Snapchat</option><option>Twitter/X</option><option>WhatsApp</option><option>Other</option>
+          </select>
+        </div>
+        <div class="survey-field">
+          <label>How does social media affect your mood?</label>
+          <select id="sv-mood">
+            <option value="">Select...</option>
+            <option>Very positively</option><option>Mostly positively</option>
+            <option>Mixed</option><option>Mostly negatively</option><option>Very negatively</option>
+          </select>
+        </div>
+        <button class="btn btn-cyan" onclick="submitSurvey()" style="width:100%;justify-content:center;">Submit Response →</button>
+      </div>
+      <div id="surveyThanks" style="display:none;text-align:center;padding:24px 0;">
+        <div style="font-size:40px;margin-bottom:12px;">✓</div>
+        <div style="font-weight:700;color:var(--green);margin-bottom:8px;">Response saved to MongoDB!</div>
+        <div style="font-size:13px;color:var(--text2);">Thank you for contributing to the research.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANALYSIS LOG -->
+  <div class="dash-section">
+    <div class="dash-section-title">Recent NLP analyses</div>
+    <div id="analysisLog">
+      <div class="empty-state">
+        <div class="empty-state-icon">📊</div>
+        <p>No analyses yet. Use the NLP Analyzer to start generating data.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MONGODB SCHEMA PREVIEW -->
+  <div style="margin-top:28px;padding:24px;border-radius:var(--r-lg);background:var(--surface);border:1px solid var(--border);">
+    <div class="dash-section-title" style="margin-bottom:16px;">MongoDB schema preview</div>
+    <pre style="background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:var(--r-sm);padding:20px;font-size:12px;color:#6ee7b7;overflow-x:auto;line-height:1.7;">// Collection: analyses
+{
+  "_id": ObjectId("..."),
+  "id": "a3f9b2c1",
+  "text_preview": "Instagram makes teenagers feel anxious...",
+  "sentiment": {
+    "score": -0.623,
+    "label": "negative",
+    "emoji": "😟",
+    "confidence": 84,
+    "keywords_positive": [],
+    "keywords_negative": ["anxious", "harmful", "addiction"]
+  },
+  "topics": [
+    { "topic": "Mental Health", "relevance": 75 },
+    { "topic": "Body Image", "relevance": 50 }
+  ],
+  "key_phrases": ["instagram", "teenagers", "body", "image"],
+  "readability_score": 72,
+  "age_level": "Teen (13-17)",
+  "word_count": 24,
+  "timestamp": ISODate("2025-06-15T14:23:11Z")
+}
+
+// Collection: survey_responses
+{
+  "id": "b8e2a1f4",
+  "age_group": "13-15",
+  "daily_hours": "2-4 hours",
+  "platform": "TikTok",
+  "mood_effect": "Mixed",
+  "timestamp": ISODate("2025-06-15T14:25:03Z")
+}</pre>
+    <div style="margin-top:12px;font-size:13px;color:var(--text2);">
+      To connect MongoDB: install <code style="background:rgba(255,255,255,.07);padding:2px 8px;border-radius:4px;">pymongo</code>, set your Atlas URI in <code style="background:rgba(255,255,255,.07);padding:2px 8px;border-radius:4px;">app.py</code>, and replace the in-memory DB dict with a real <code style="background:rgba(255,255,255,.07);padding:2px 8px;border-radius:4px;">MongoClient</code> instance.
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+async function loadStats() {
+  try {
+    const stats = await apiGet('/api/stats');
+    const total = stats.total_analyses || 0;
+    const pos = stats.positive_count || 0;
+    const neg = stats.negative_count || 0;
+    const neu = stats.neutral_count || 0;
+
+    document.getElementById('m-total').textContent = total;
+    document.getElementById('m-pos').textContent = pos;
+    document.getElementById('m-neg').textContent = neg;
+    document.getElementById('m-neu').textContent = neu;
+    document.getElementById('lastUpdate').textContent = '— updated ' + new Date().toLocaleTimeString();
+
+    if (total > 0) {
+      const setBar = (id, count) => {
+        const pct = Math.round(count/total*100);
+        document.getElementById('sb-'+id).style.width = pct+'%';
+        document.getElementById('sbp-'+id).textContent = pct+'%';
+      };
+      setBar('pos', pos); setBar('neg', neg); setBar('neu', neu);
+    }
+  } catch(e) {}
+}
+
+async function loadAnalyses() {
+  try {
+    const data = await apiGet('/api/analyses');
+    const log = document.getElementById('analysisLog');
+    if (!data.length) return;
+    log.innerHTML = data.map(d => `
+      <div class="log-item" style="margin-bottom:10px;">
+        <div class="log-emoji" style="font-size:24px;">${d.sentiment.emoji}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">
+            <span class="log-badge ${d.sentiment.label}">${d.sentiment.label}</span>
+            <span class="log-score" style="font-size:12px;color:var(--text3);">score: ${d.sentiment.score}</span>
+            ${d.topics.slice(0,2).map(t=>`<span class="topic-chip" style="font-size:10px;padding:2px 8px;">${t.topic}</span>`).join('')}
+          </div>
+          <div class="log-preview">${d.text_preview}</div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);white-space:nowrap;text-align:right;">
+          ${d.word_count} words<br>${d.age_level}
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {}
+}
+
+async function submitSurvey() {
+  const age = document.getElementById('sv-age').value;
+  const hours = document.getElementById('sv-hours').value;
+  const platform = document.getElementById('sv-platform').value;
+  const mood = document.getElementById('sv-mood').value;
+
+  if (!age || !hours || !platform || !mood) {
+    showToast('Please fill in all fields', 'error'); return;
+  }
+
+  try {
+    await apiPost('/api/survey', { age_group: age, daily_hours: hours, platform, mood_effect: mood });
+    document.getElementById('surveyForm').style.display = 'none';
+    document.getElementById('surveyThanks').style.display = 'block';
+    showToast('Survey saved to database ✓', 'success');
+  } catch(e) {
+    showToast('Failed to save. Is the server running?', 'error');
+  }
+}
+
+// Initial load + auto-refresh
+loadStats();
+loadAnalyses();
+setInterval(() => { loadStats(); loadAnalyses(); }, 10000);
+</script>
+{% endblock %}

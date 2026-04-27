@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>{% block title %}SocialScope{% endblock %} — Youth & Social Media Research</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/main.css">
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<!-- CURSOR GLOW -->
+<div class="cursor-glow" id="cursorGlow"></div>
+
+<!-- BACKGROUND GRID -->
+<div class="bg-grid"></div>
+<div class="bg-orbs">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+
+<!-- NAV -->
+<nav class="nav" id="navbar">
+  <div class="nav-inner">
+    <a href="/" class="logo">
+      <span class="logo-icon">◈</span>
+      Social<span class="logo-accent">Scope</span>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="/" {% if request.path=='/' %}class="active"{% endif %}>Home</a></li>
+      <li><a href="/impacts" {% if request.path=='/impacts' %}class="active"{% endif %}>Impacts</a></li>
+      <li><a href="/model" {% if request.path=='/model' %}class="active"{% endif %}>Model</a></li>
+      <li><a href="/analyzer" {% if request.path=='/analyzer' %}class="active"{% endif %}>
+        <span class="nav-badge">NLP</span>Analyzer
+      </a></li>
+      <li><a href="/quiz" {% if request.path=='/quiz' %}class="active"{% endif %}>Quiz</a></li>
+      <li><a href="/cases" {% if request.path=='/cases' %}class="active"{% endif %}>Cases</a></li>
+      <li><a href="/solutions" {% if request.path=='/solutions' %}class="active"{% endif %}>Solutions</a></li>
+      <li><a href="/dashboard" {% if request.path=='/dashboard' %}class="active"{% endif %}>
+        <span class="nav-badge live">LIVE</span>Dashboard
+      </a></li>
+      <li><a href="/wellness" {% if request.path=='/wellness' %}class="active"{% endif %}>
+        <span class="nav-badge" style="background:rgba(16,185,129,.15);color:var(--green);">NEW</span>Wellness
+      </a></li>
+      <li><a href="/biometric" {% if request.path=='/biometric' %}class="active"{% endif %}>
+        <span class="nav-badge" style="background:rgba(123,47,255,.2);color:var(--purple);">AI</span>Biometric
+      </a></li>
+      <li><a href="/chat-analysis" {% if request.path=='/chat-analysis' %}class="active"{% endif %}>
+        <span class="nav-badge" style="background:rgba(245,158,11,.15);color:#f59e0b;">💬</span>Chat Mood
+      </a></li>
+      <li><a href="/mood-checkin" {% if request.path=='/mood-checkin' %}class="active"{% endif %}>
+        <span class="nav-badge" style="background:rgba(239,68,68,.15);color:#f87171;">🔥</span>Check-in
+      </a></li>
+      <li><a href="/chatbot" {% if request.path=='/chatbot' %}class="active"{% endif %}>
+        <span class="nav-badge" style="background:rgba(99,102,241,.2);color:#a78bfa;">🤖</span>Sage AI
+      </a></li>
+    </ul>
+    <button class="hamburger" id="hamburger">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- PAGE CONTENT -->
+{% block content %}{% endblock %}
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-glow"></div>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="logo" style="margin-bottom:12px">
+          <span class="logo-icon">◈</span> Social<span class="logo-accent">Scope</span>
+        </div>
+        <p>An advanced research platform examining the dual impact of social media on children and adolescents. Powered by NLP and backed by peer-reviewed research.</p>
+        <div class="footer-badges">
+          <span class="fbadge">🔬 NLP-Powered</span>
+          <span class="fbadge">🗄️ MongoDB-Ready</span>
+          <span class="fbadge">📊 Live Analytics</span>
+        </div>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <div class="footer-col-title">Research</div>
+          <a href="/impacts">Impact Analysis</a>
+          <a href="/cases">Case Studies</a>
+          <a href="/model">Working Model</a>
+          <a href="/solutions">Solutions</a>
+        </div>
+        <div class="footer-col">
+          <div class="footer-col-title">Tools</div>
+          <a href="/analyzer">NLP Analyzer</a>
+          <a href="/chat-analysis">💬 Chat Analysis</a>
+          <a href="/mood-checkin">🔥 Mood Check-in</a>
+          <a href="/chatbot">🤖 Sage AI</a>
+          <a href="/biometric">Biometric Mood</a>
+          <a href="/quiz">Knowledge Quiz</a>
+          <a href="/dashboard">Live Dashboard</a>
+        </div>
+        <div class="footer-col">
+          <div class="footer-col-title">Tech Stack</div>
+          <a href="#">Flask (Python)</a>
+          <a href="#">MongoDB Atlas</a>
+          <a href="#">NLP Engine</a>
+          <a href="#">REST API</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2025 SocialScope — Academic Research Project</span>
+      <div class="footer-status">
+        <span class="status-dot"></span>
+        <span id="api-status">API: Checking...</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="/static/js/main.js"></script>
+{% block scripts %}{% endblock %}
+<script>
+  fetch('/api/health').then(r=>r.json()).then(d=>{
+    document.getElementById('api-status').textContent = 'API: Online ✓';
+  }).catch(()=>{
+    document.getElementById('api-status').textContent = 'API: Offline';
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Impact Analysis{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container page-hero-content">
+    <div class="overline">Evidence-Based Research</div>
+    <h1>Positive &amp; Negative<br><span style="color:var(--cyan);">Impacts</span></h1>
+    <p>A balanced, peer-reviewed breakdown of how social media affects children and adolescents aged 8–18 across six key dimensions.</p>
+  </div>
+</div>
+<div class="container" style="padding-bottom:80px;">
+
+  <!-- POSITIVE -->
+  <div class="overline" style="margin-bottom:24px;margin-top:8px;">
+    <span style="background:rgba(16,185,129,.12);color:#6ee7b7;padding:4px 16px;border-radius:20px;border:1px solid rgba(16,185,129,.2);">Positive Impacts</span>
+  </div>
+  <div class="impact-grid" style="margin-bottom:60px;">
+    {% set positives = [
+      ('🤝','Social Connection & Belonging','Social media helps children maintain friendships beyond school, connect with peers who share niche interests, and reduce isolation — especially for neurodivergent or marginalised youth.','70% of teens say social media makes them feel more connected to friends (Pew, 2022)'),
+      ('🎨','Creative Expression & Identity','TikTok, YouTube, and Instagram provide tools for self-expression through video, music, and art — fostering identity formation and confidence during the critical adolescent years.','60% of teen content creators report improved self-confidence from sharing work online'),
+      ('📚','Educational Access & Learning','YouTube, Khan Academy, and informal social learning democratise access to quality education regardless of socioeconomic background — the leveller of the digital age.','84% of students use YouTube for self-directed learning and homework support'),
+      ('🏳️‍🌈','Support for Marginalised Youth','LGBTQ+ teens, those with chronic illness, and other marginalised groups find vital peer support online, with access correlating to 40% lower loneliness scores.','LGBTQ+ youth with online community access report 40% lower loneliness (UCLA, 2022)'),
+      ('🌍','Civic Engagement & Activism','Young people use social media for political education, environmental activism, and community organising — Gen Z are 2× more likely to engage civically via social media than prior generations.','Gen Z are 2× more likely to have done civic action through social media'),
+      ('💡','Career Skills & Entrepreneurship','Many young people develop digital skills — content creation, video editing, marketing — years ahead of traditional pathways. 25% of Gen Z teens have earned income via social media.','25% of Gen Z teens have earned income through social media platforms by age 17')
+    ] %}
+    {% for icon, title, desc, stat in positives %}
+    <div class="impact-card pos-card anim-fade">
+      <div class="impact-card-icon">{{ icon }}</div>
+      <h4>{{ title }}</h4>
+      <p>{{ desc }}</p>
+      <div class="impact-stat">📊 {{ stat }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- NEGATIVE -->
+  <div class="overline" style="margin-bottom:24px;">
+    <span style="background:rgba(239,68,68,.1);color:#fca5a5;padding:4px 16px;border-radius:20px;border:1px solid rgba(239,68,68,.2);">Negative Impacts</span>
+  </div>
+  <div class="impact-grid" style="margin-bottom:60px;">
+    {% set negatives = [
+      ('😢','Depression & Anxiety','Heavy passive use (&gt;3 hrs/day) correlates strongly with depression and anxiety. Girls are disproportionately affected through social comparison on image-focused platforms.','Teens using SM 5+ hrs/day are 66% more likely to report depressive symptoms (Twenge, 2018)'),
+      ('🚫','Cyberbullying & Harassment','37% of children have experienced cyberbullying. Online disinhibition enables harassment, with victims 2.5× more likely to self-harm compared to non-victims.','37% of children aged 12–17 have been cyberbullied. Victims 2.5× more likely to self-harm'),
+      ('🪞','Body Image Distortion','Algorithmically curated feeds promote unrealistic body ideals. 1 in 3 teen girls report worse body image after Instagram. Linked to disordered eating in 11–17 year olds.','Facebook internal study: 1 in 3 teen girls feel worse about their bodies after Instagram'),
+      ('🌙','Sleep Disruption','Late-night use causes 1–2 hours of lost sleep per night. Blue light suppresses melatonin; notification anxiety causes midnight micro-arousals. 45% report fatigue affecting schoolwork.','Teens using phones after 10 PM lose average 1.5 hrs sleep/night (RCPCH, 2019)'),
+      ('🧠','Attention & Cognitive Harm','Rapid short-form content (TikTok, Reels) conditions shallow, fragmented attention. Average teen attention span fell from 12 to 8 minutes in educational settings since 2000.','Average teen attention span in school fell from 12 mins (2000) to 8 mins (2023)'),
+      ('⚠️','Exposure to Harmful Content','56% of teens have seen hateful content; 64% have encountered self-harm content. Algorithmic escalation can rapidly lead from benign to dangerous content without any intentional search.','CCDH: TikTok algorithm leads to eating disorder content within 2.6 minutes of interest signal')
+    ] %}
+    {% for icon, title, desc, stat in negatives %}
+    <div class="impact-card neg-card anim-fade">
+      <div class="impact-card-icon">{{ icon }}</div>
+      <h4>{{ title }}</h4>
+      <p>{{ desc }}</p>
+      <div class="impact-stat">📊 {{ desc[:0] }}{{ stat }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- AGE TABLE -->
+  <div class="overline" style="margin-bottom:20px;">Age-specific breakdown</div>
+  <div style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;font-size:13px;">
+      <thead>
+        <tr style="background:rgba(0,245,212,.08);border-bottom:1px solid var(--border);">
+          <th style="padding:16px 20px;text-align:left;color:var(--cyan);font-weight:600;">Age Group</th>
+          <th style="padding:16px 20px;text-align:left;color:#fca5a5;font-weight:600;">Primary Risks</th>
+          <th style="padding:16px 20px;text-align:left;color:#6ee7b7;font-weight:600;">Primary Benefits</th>
+          <th style="padding:16px 20px;text-align:left;color:var(--text2);font-weight:600;">Recommendation</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in [
+          ('8–10 yrs','Predatory contact, age-inappropriate content, habit formation','Educational content, creative play, family connection','Supervised use only. Educational platforms only.'),
+          ('11–13 yrs','Body image, cyberbullying, sleep disruption, social anxiety','Peer connection, identity exploration, creative outlets','Partial supervision. Clear time limits. Regular talks.'),
+          ('14–16 yrs','Depression, FOMO, harmful content, comparison culture','Identity development, community, skill building','Media literacy essential. Active over passive use.'),
+          ('17–18 yrs','Addiction patterns, academic distraction, misinformation','Career development, civic engagement, networking','Self-regulation skills. Intentional, purposeful use.')
+        ] %}
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:14px 20px;font-weight:600;color:var(--text);">{{ row[0] }}</td>
+          <td style="padding:14px 20px;color:#fca5a5;">{{ row[1] }}</td>
+          <td style="padding:14px 20px;color:#6ee7b7;">{{ row[2] }}</td>
+          <td style="padding:14px 20px;color:var(--text2);">{{ row[3] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

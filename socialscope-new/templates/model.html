@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}Working Model{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container page-hero-content">
+    <div class="overline">Interactive Simulation</div>
+    <h1>Working <span style="color:var(--cyan);">Model</span></h1>
+    <p>Adjust variables to simulate different scenarios and see predicted wellbeing outcomes update in real time.</p>
+  </div>
+</div>
+<div class="container" style="padding-bottom:80px;">
+  <div class="model-layout">
+
+    <div class="control-panel">
+      <div style="font-size:16px;font-weight:700;margin-bottom:24px;color:var(--text);">Input Variables</div>
+
+      <div class="control-group">
+        <div class="control-label">Daily screen time <span class="val" id="v-time">3 hrs</span></div>
+        <input type="range" min="0" max="8" step="0.5" value="3" oninput="updateModel()">
+      </div>
+      <div class="control-group">
+        <div class="control-label" style="margin-bottom:10px;">Age group</div>
+        <div class="pill-group" id="age-pills">
+          <button class="pill" onclick="setGroup('age',0,this)">8–10</button>
+          <button class="pill active" onclick="setGroup('age',1,this)">13–17</button>
+          <button class="pill" onclick="setGroup('age',2,this)">18+</button>
+        </div>
+      </div>
+      <div class="control-group">
+        <div class="control-label">Parental supervision <span class="val" id="v-sup">50%</span></div>
+        <input type="range" min="0" max="100" step="10" value="50" oninput="updateModel()">
+      </div>
+      <div class="control-group">
+        <div class="control-label" style="margin-bottom:10px;">Platform type</div>
+        <div class="pill-group" id="plat-pills">
+          <button class="pill" onclick="setGroup('plat',0,this)">Educational</button>
+          <button class="pill active" onclick="setGroup('plat',1,this)">Mixed</button>
+          <button class="pill" onclick="setGroup('plat',2,this)">High-risk</button>
+        </div>
+      </div>
+      <div class="control-group">
+        <div class="control-label" style="margin-bottom:10px;">Usage type</div>
+        <div class="pill-group" id="use-pills">
+          <button class="pill" onclick="setGroup('use',0,this)">Passive</button>
+          <button class="pill active" onclick="setGroup('use',1,this)">Mixed</button>
+          <button class="pill" onclick="setGroup('use',2,this)">Active</button>
+        </div>
+      </div>
+
+      <button class="btn btn-outline" onclick="resetAll()" style="width:100%;justify-content:center;margin-top:4px;">↺ Reset defaults</button>
+    </div>
+
+    <div>
+      <div class="result-cards">
+        {% for id, label, color in [
+          ('mental','🧠 Mental wellbeing','var(--green)'),
+          ('social','👥 Social connection','var(--blue)'),
+          ('bully','🚫 Cyberbullying risk','var(--red)'),
+          ('sleep','🌙 Sleep quality','var(--amber)'),
+          ('acad','📖 Academic focus','var(--cyan)'),
+          ('body','🪞 Body image','var(--purple)')
+        ] %}
+        <div class="result-card">
+          <div class="result-header">
+            <h4>{{ label }}</h4>
+            <div class="result-pct" id="pct-{{ id }}" style="color:{{ color }};">60%</div>
+          </div>
+          <div class="res-bar-track">
+            <div class="res-bar-fill" id="bar-{{ id }}" style="width:60%;background:{{ color }};"></div>
+          </div>
+          <div class="res-desc" id="desc-{{ id }}">Adjust sliders to see prediction...</div>
+        </div>
+        {% endfor %}
+
+        <div class="verdict mid" id="verdict">
+          <div class="verdict-title" id="verdict-title">△ Moderate Risk</div>
+          <p id="verdict-text">Adjust the controls to model different usage scenarios and see a risk assessment.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+let state = { age:1, plat:1, use:1 };
+const inputs = document.querySelectorAll('input[type=range]');
+
+function setGroup(key, val, btn) {
+  state[key] = val;
+  document.getElementById(key+'-pills').querySelectorAll('.pill').forEach((b,i) => b.classList.toggle('active', i===val));
+  updateModel();
+}
+
+function updateModel() {
+  const time = parseFloat(inputs[0].value);
+  const sup  = parseFloat(inputs[1].value);
+  document.getElementById('v-time').textContent = time + ' hrs';
+  document.getElementById('v-sup').textContent  = sup + '%';
+
+  const pR = [0.35, 1.0, 1.9][state.plat];
+  const pP = [1.6, 1.0, 0.4][state.plat];
+  const aV = [0.75, 1.0, 0.55][state.age];
+  const uB = [0.6, 1.0, 1.4][state.use];
+  const sf = sup/100;
+  const tR = Math.min(1, time/6);
+  const tP = time < 1 ? time : Math.max(0, 1-(time-2)/6);
+
+  const C = (v) => Math.round(Math.max(5, Math.min(95, v)));
+  const mental = C(82 - tR*32*pR*aV + sf*14 + (state.use-1)*6);
+  const social  = C(50 + tP*38*pP*uB*0.7 + sf*4);
+  const bully   = C(8  + tR*42*pR*aV - sf*22 - state.use*4);
+  const sleep   = C(88 - tR*38 - (1-sf)*8);
+  const acad    = C(86 - tR*26*pR*0.7 + sf*7 + (state.use-1)*5);
+  const body    = C(85 - tR*28*pR*aV*0.9 + sf*10 + (state.use-1)*6);
+
+  set('mental', mental, ['High mental health risk — heavy use on this platform is linked to depression.','Moderate wellbeing — some risk factors present. Monitor for comparison anxiety.','Good mental wellbeing — active use and supervision are protective.']);
+  set('social', social, ['Social connection is suffering — reduce passive scrolling.','Reasonable engagement — platform use supports some peer connection.','Strong social connection — platform use enhancing real-world friendships.']);
+  set('bully', bully, ['Low risk — good platform selection and supervision working well.','Moderate exposure risk — review platform choices and online safety education.','High risk — urgent review of usage and safety education needed.']);
+  set('sleep', sleep, ['Sleep severely impacted — implement an immediate device-free bedtime.','Sleep somewhat affected — a consistent 9 PM device curfew would help.','Sleep quality good — current habits not significantly disrupting rest.']);
+  set('acad', acad, ['Academic focus significantly impaired — consider stricter device limits.','Mildly affected — short-form content may be impacting concentration.','Academic focus healthy — usage patterns not interfering with learning.']);
+  set('body', body, ['High body image risk — image-focused platforms causing significant harm.','Moderate risk — encourage critical media literacy about filtered content.','Positive body image predicted — active, diverse use is protective.']);
+
+  const avg = (mental + (100-bully) + sleep + acad + body) / 5;
+  const v = document.getElementById('verdict');
+  v.className = 'verdict';
+  if (avg >= 72) {
+    v.classList.add('low');
+    document.getElementById('verdict-title').textContent = '✓ Low Risk';
+    document.getElementById('verdict-text').textContent = 'Positive indicators across most dimensions. Parental involvement, appropriate platform selection, and active engagement are working as protective factors.';
+  } else if (avg < 48) {
+    v.classList.add('high');
+    document.getElementById('verdict-title').textContent = '⚠ High Risk';
+    document.getElementById('verdict-text').textContent = 'This combination of factors is associated with significant negative outcomes. Review usage habits, reduce screen time, switch to lower-risk platforms, and strengthen parental oversight immediately.';
+  } else {
+    v.classList.add('mid');
+    document.getElementById('verdict-title').textContent = '△ Moderate Risk';
+    document.getElementById('verdict-text').textContent = 'Mixed outcomes predicted. Key actions: reduce daily duration, shift to active use, strengthen parental engagement, and consider media literacy education.';
+  }
+}
+
+function set(id, pct, msgs) {
+  document.getElementById('bar-'+id).style.width = pct+'%';
+  document.getElementById('pct-'+id).textContent = pct+'%';
+  const i = id === 'bully' ? (pct<30?0:pct<60?1:2) : (pct<40?0:pct<70?1:2);
+  document.getElementById('desc-'+id).textContent = msgs[i];
+}
+
+function resetAll() {
+  inputs[0].value = 3; inputs[1].value = 50;
+  state = {age:1,plat:1,use:1};
+  ['age','plat','use'].forEach(k => {
+    document.getElementById(k+'-pills').querySelectorAll('.pill').forEach((b,i)=>b.classList.toggle('active',i===1));
+  });
+  updateModel();
+}
+updateModel();
+</script>
+{% endblock %}

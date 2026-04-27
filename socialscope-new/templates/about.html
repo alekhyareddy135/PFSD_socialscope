@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}About{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container page-hero-content">
+    <div class="overline">About This Project</div>
+    <h1>Methodology &amp; <span style="color:var(--cyan);">References</span></h1>
+    <p>An advanced research platform combining NLP, MongoDB, and peer-reviewed research to examine social media's dual impact on children and adolescents.</p>
+  </div>
+</div>
+<div class="container" style="padding-bottom:80px;">
+  <div class="about-grid">
+    <div>
+      <div style="padding:28px;border-radius:var(--r-lg);background:var(--surface);border:1px solid var(--border);margin-bottom:28px;">
+        <div class="about-section-title">Project methodology</div>
+        <ul class="method-list">
+          <li>Systematic literature review of peer-reviewed studies published 2015–2024 on social media and adolescent wellbeing.</li>
+          <li>Analysis of longitudinal datasets: Millennium Cohort Study (UK), Monitoring the Future (USA), HBSC international survey.</li>
+          <li>Case studies selected for large sample sizes (n &gt; 1,000), pre-registered methodologies, and independent replication.</li>
+          <li>NLP engine uses a curated 150+ word lexicon with weighted scoring, negation handling, and sqrt-dampened normalisation.</li>
+          <li>Interactive model algorithm derived from effect sizes in Twenge &amp; Campbell (2019) and Przybylski &amp; Weinstein (2017).</li>
+          <li>Recommendations cross-referenced with UK Online Safety Act (2023), EU DSA (2024), and UNICEF digital rights guidance.</li>
+          <li>MongoDB schema designed for scalability — all API endpoints are swap-ready for full Atlas integration.</li>
+        </ul>
+      </div>
+
+      <div style="padding:28px;border-radius:var(--r-lg);background:var(--surface);border:1px solid var(--border);margin-bottom:28px;">
+        <div class="about-section-title">Tech stack &amp; architecture</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          {% for layer, tech, detail in [
+            ('Backend','Python 3 + Flask','REST API with 8 endpoints'),
+            ('Database','MongoDB Atlas','4 collections, JSON documents'),
+            ('NLP Engine','Custom Python NLP','Sentiment, topics, phrases'),
+            ('Frontend','Vanilla HTML/CSS/JS','Zero framework dependency'),
+            ('Fonts','Google Fonts (Syne + Inter)','CDN loaded'),
+            ('Deployment','Any Python host','Heroku, Render, Railway')
+          ] %}
+          <div style="padding:14px;background:var(--surface2);border-radius:var(--r-sm);border:1px solid var(--border);">
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">{{ layer }}</div>
+            <div style="font-size:14px;font-weight:600;color:var(--text);">{{ tech }}</div>
+            <div style="font-size:12px;color:var(--text2);">{{ detail }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div style="padding:28px;border-radius:var(--r-lg);background:var(--surface);border:1px solid var(--border);">
+        <div class="about-section-title">Key researchers in this field</div>
+        {% for name, affil, note in [
+          ('Jean Twenge','San Diego State University','Longitudinal research on generational mental health. Author of iGen (2017).'),
+          ('Jonathan Haidt','NYU Stern School of Business','Co-author of The Anxious Generation (2024). Argues smartphones caused the adolescent mental health crisis.'),
+          ('Andrew Przybylski','Oxford Internet Institute','Advocates methodological rigour. Challenges catastrophist narratives with pre-registered methods.'),
+          ('Candice Odgers','UC Irvine','Longitudinal research suggesting pre-existing conditions predict harm more than usage per se.'),
+        ] %}
+        <div style="padding:16px 0;border-bottom:1px solid var(--border);">
+          <div style="font-size:14px;font-weight:600;color:var(--text);">{{ name }}</div>
+          <div style="font-size:12px;color:var(--cyan);margin-bottom:4px;">{{ affil }}</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.6;">{{ note }}</div>
+        </div>
+        {% endfor %}
+        <div style="margin-top:14px;font-size:13px;color:var(--text3);font-style:italic;">The field has genuine scientific debates. This project presents the weight of evidence while acknowledging where researchers disagree.</div>
+      </div>
+    </div>
+
+    <!-- REFERENCES -->
+    <div class="ref-card">
+      <h3>Key references</h3>
+      {% for authors, title, journal in [
+        ('Twenge & Campbell (2019)','Media use is linked to lower psychological well-being','Preventive Medicine Reports, 13, 271–278'),
+        ('Przybylski & Weinstein (2017)','A large-scale test of the Goldilocks hypothesis','Psychological Science, 28(2), 204–215'),
+        ('Haidt & Allen (2020)','Scrutinising the effects of digital technology on mental health','Nature, 578, 226–227'),
+        ('Facebook Internal (2021)','Leaked slides on Instagram & teen body image','Wall Street Journal investigation'),
+        ('RCPCH (2019)','Screen time and the health of children and young people','Royal College of Paediatrics'),
+        ('Trevor Project (2022)','National Survey on LGBTQ Youth Mental Health','thetrevoproject.org'),
+        ('CCDH (2022)','Deadly by Design: TikTok Algorithms & Teen Girls','Centre for Countering Digital Hate'),
+        ('Odgers & Jensen (2020)','Annual Research Review: Adolescent mental health in the digital age','J. Child Psychol. Psychiatry, 61(3)'),
+        ('Pew Research (2022)','Teens, Social Media and Technology 2022','pewresearch.org'),
+        ('NHS Digital (2022)','Mental Health of Children and Young People in England','digital.nhs.uk'),
+        ('UNICEF (2021)','The State of the World\'s Children 2021: On My Mind','unicef.org'),
+        ('UK Online Safety Act (2023)','Legislation requiring age verification & content safety','legislation.gov.uk'),
+      ] %}
+      <div class="ref-item">
+        <strong>{{ authors }}</strong>
+        {{ title }}. <em style="font-style:italic;color:var(--text3);">{{ journal }}</em>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- CONCLUSION -->
+  <div style="margin-top:60px;padding:48px;border-radius:var(--r-xl);background:linear-gradient(135deg,rgba(0,245,212,.06),rgba(67,97,238,.06));border:1px solid rgba(0,245,212,.15);text-align:center;">
+    <div class="overline" style="justify-content:center;margin-bottom:16px;">Conclusion</div>
+    <h2 style="font-size:clamp(24px,4vw,44px);font-weight:700;max-width:640px;margin:0 auto 20px;color:var(--text);">Social media is a tool. Outcomes depend on how it is used.</h2>
+    <p style="font-size:16px;color:var(--text2);max-width:560px;margin:0 auto 32px;line-height:1.85;">Neither panic nor dismissal serves children well. The evidence calls for nuanced, evidence-based responses from every stakeholder — matched to the specific age, platform, and context of each child's digital life.</p>
+    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
+      <a href="/impacts" class="btn btn-cyan">Review the evidence</a>
+      <a href="/analyzer" class="btn btn-outline">Try NLP Analyzer →</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

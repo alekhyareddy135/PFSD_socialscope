@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-content container">
+    <div class="hero-tag animate-in" style="animation:fadeUp .6s .1s both">
+      ◈ Research Platform 2025 · NLP-Powered · MongoDB-Ready
+    </div>
+    <h1 class="hero-title animate-in" style="animation:fadeUp .6s .2s both">
+      Social Media &amp;<br>
+      <span class="grad">Young Minds</span>
+    </h1>
+    <p class="hero-sub animate-in" style="animation:fadeUp .6s .35s both">
+      An advanced research platform examining how digital platforms shape the mental health, development, and lives of children aged 8–18. Powered by real NLP sentiment analysis and backed by peer-reviewed research.
+    </p>
+    <div class="hero-actions animate-in" style="animation:fadeUp .6s .5s both">
+      <a href="/analyzer" class="btn btn-cyan">🧠 Try NLP Analyzer</a>
+      <a href="/impacts" class="btn btn-outline">Explore Impacts →</a>
+      <a href="/quiz" class="btn btn-ghost">Take the Quiz</a>
+    </div>
+    <div class="hero-stats animate-in" style="animation:fadeUp .6s .65s both">
+      <div class="hstat">
+        <div class="hstat-num" data-count="97">0</div>
+        <div class="hstat-label">% teens on<br>social media daily</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-num" data-count="3.2">0</div>
+        <div class="hstat-label">avg hours per<br>day on platforms</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-num" data-count="45">0</div>
+        <div class="hstat-label">% feel overwhelmed<br>by social media</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-num" data-count="6">0</div>
+        <div class="hstat-label">billion+ global<br>social media users</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES OVERVIEW -->
+<section class="section">
+  <div class="container">
+    <div class="overline">Platform Features</div>
+    <h2 class="section-title">Everything in one place</h2>
+    <p class="section-sub">From live NLP analysis to interactive models — this platform brings together research, data, and tools to understand social media's impact on youth.</p>
+
+    <div class="feature-grid">
+      <a href="/analyzer" class="feature-card anim-fade" data-glow="cyan">
+        <div class="fc-icon">🧠</div>
+        <h3>NLP Sentiment Analyzer</h3>
+        <p>Paste any social media post, comment, or research text. Our NLP engine detects sentiment, topics, key phrases, and age-appropriateness in real time.</p>
+        <span class="fc-link">Analyze text →</span>
+      </a>
+
+      <a href="/model" class="feature-card anim-fade" data-glow="blue">
+        <div class="fc-icon">⚙️</div>
+        <h3>Interactive Working Model</h3>
+        <p>Adjust screen time, age group, platform type, and parental supervision. See predicted outcomes across 6 wellbeing dimensions update live.</p>
+        <span class="fc-link">Try the model →</span>
+      </a>
+
+      <a href="/quiz" class="feature-card anim-fade" data-glow="purple">
+        <div class="fc-icon">🎯</div>
+        <h3>Knowledge Quiz</h3>
+        <p>Test your understanding with 10 research-backed questions on social media and adolescent wellbeing. Instant feedback with explanations.</p>
+        <span class="fc-link">Take the quiz →</span>
+      </a>
+
+      <a href="/dashboard" class="feature-card anim-fade" data-glow="pink">
+        <div class="fc-icon">📊</div>
+        <h3>Live Analytics Dashboard</h3>
+        <p>Real-time sentiment statistics, analysis log, and community survey results — all stored in MongoDB and visualised live.</p>
+        <span class="fc-link">View dashboard →</span>
+      </a>
+
+      <a href="/wellness" class="feature-card anim-fade" data-glow="green" style="border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.04);">
+        <div class="fc-icon">🌿</div>
+        <h3>Digital Wellness Tracker <span style="font-size:10px;font-weight:700;background:rgba(16,185,129,.2);color:var(--green);padding:2px 8px;border-radius:6px;vertical-align:middle;">NEW</span></h3>
+        <p>Track your daily screen time, log apps, set goals, complete challenges, earn badges, and get a personalised wellness score. Your full digital health dashboard.</p>
+        <span class="fc-link" style="color:var(--green);">Open tracker →</span>
+      </a>
+
+      <a href="/impacts" class="feature-card anim-fade" data-glow="green">
+        <div class="fc-icon">⚖️</div>
+        <h3>Impact Analysis</h3>
+        <p>Comprehensive breakdown of 6 positive and 6 negative effects with real statistics, age-group breakdowns, and citation data.</p>
+        <span class="fc-link">Read impacts →</span>
+      </a>
+
+      <a href="/cases" class="feature-card anim-fade" data-glow="amber">
+        <div class="fc-icon">📁</div>
+        <h3>Case Studies</h3>
+        <p>Six documented real-world cases — from the Instagram body image scandal to LGBTQ+ communities finding support through TikTok.</p>
+        <span class="fc-link">View cases →</span>
+      </a>
+
+      <a href="/chat-analysis" class="feature-card anim-fade" data-glow="cyan" style="border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.04);">
+        <div class="fc-icon">💬</div>
+        <h3>Chat Emotion Analysis <span class="nav-badge" style="background:rgba(245,158,11,.2);color:#f59e0b;font-size:9px;padding:2px 8px;">NEW</span></h3>
+        <p>Upload or paste a WhatsApp/text chat. We'll detect emotional patterns across days — stress signals, mood trends, and personalized suggestions.</p>
+        <span class="fc-link">Analyze chats →</span>
+      </a>
+
+      <a href="/mood-checkin" class="feature-card anim-fade" data-glow="pink" style="border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.04);">
+        <div class="fc-icon">🔥</div>
+        <h3>Daily Mood Check-in <span class="nav-badge" style="background:rgba(239,68,68,.2);color:#f87171;font-size:9px;padding:2px 8px;">NEW</span></h3>
+        <p>Log how you feel daily, build check-in streaks 🔥, and get personalized music, quotes, and activity suggestions based on your current mood.</p>
+        <span class="fc-link">Check in today →</span>
+      </a>
+
+      <a href="/chatbot" class="feature-card anim-fade" data-glow="purple" style="border-color:rgba(99,102,241,.3);background:rgba(99,102,241,.04);">
+        <div class="fc-icon">🤖</div>
+        <h3>Sage AI Assistant <span class="nav-badge" style="background:rgba(99,102,241,.2);color:#a78bfa;font-size:9px;padding:2px 8px;">NEW</span></h3>
+        <p>Your personal wellness companion. Share how you feel and Sage responds with empathy, breathing exercises, motivational quotes, and music recommendations.</p>
+        <span class="fc-link">Talk to Sage →</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- TECH STACK STRIP -->
+<section style="padding:48px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+  <div class="container">
+    <div style="display:flex;align-items:center;gap:40px;flex-wrap:wrap;justify-content:center;">
+      <div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.12em;">Tech Stack</div>
+      {% for tech in [
+        ('🐍','Python 3 / Flask','Backend Framework'),
+        ('🗄️','MongoDB Atlas','NoSQL Database'),
+        ('🧠','Custom NLP Engine','Sentiment & Topic Analysis'),
+        ('🔌','REST API','JSON Endpoints'),
+        ('⚡','Vanilla JS','Zero-dependency Frontend'),
+        ('📊','Live Analytics','Real-time Dashboard')
+      ] %}
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:20px;">{{ tech[0] }}</span>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--text);">{{ tech[1] }}</div>
+          <div style="font-size:11px;color:var(--text3);">{{ tech[2] }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- QUICK INSIGHT -->
+<section class="section">
+  <div class="container">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;">
+      <div class="anim-fade">
+        <div class="overline">Key Research Finding</div>
+        <h2 class="section-title">Active vs passive use changes everything</h2>
+        <p style="font-size:15px;color:var(--text2);line-height:1.85;margin-bottom:24px;">Research consistently shows that <strong style="color:var(--text);">how</strong> children use social media matters far more than <strong style="color:var(--text);">how long</strong> they use it. One hour of active engagement — creating, commenting, messaging — produces dramatically better outcomes than three hours of passive scrolling.</p>
+        <a href="/impacts" class="btn btn-outline">See the evidence →</a>
+      </div>
+      <div class="anim-fade" style="display:flex;flex-direction:column;gap:14px;">
+        {% for item in [
+          ('Active use', 82, 'var(--green)'),
+          ('No social media', 68, 'var(--amber)'),
+          ('Passive scrolling', 41, 'var(--red)')
+        ] %}
+        <div style="padding:18px 22px;border-radius:var(--r-md);background:var(--surface);border:1px solid var(--border);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <span style="font-size:14px;font-weight:500;">{{ item[0] }}</span>
+            <span style="font-family:var(--font-display);font-size:20px;font-weight:700;color:{{ item[2] }};">{{ item[1] }}%</span>
+          </div>
+          <div style="height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:{{ item[1] }}%;background:{{ item[2] }};border-radius:3px;"></div>
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-top:6px;">Wellbeing score</div>
+        </div>
+        {% endfor %}
+        <div style="font-size:11px;color:var(--text3);text-align:right;font-style:italic;">Source: Twenge & Campbell (2019), adapted</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+@keyframes fadeUp { from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)} }
+</style>
+{% endblock %}

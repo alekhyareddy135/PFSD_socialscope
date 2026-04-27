@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Solutions{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container page-hero-content">
+    <div class="overline">Evidence-Based Interventions</div>
+    <h1>Solutions &amp; <span style="color:var(--cyan);">Recommendations</span></h1>
+    <p>Practical, research-backed recommendations for every stakeholder — parents, schools, policymakers, and tech platforms.</p>
+  </div>
+</div>
+<div class="container" style="padding-bottom:80px;">
+  <div class="sol-tabs">
+    <button class="sol-tab active" onclick="showSol('all',this)">All</button>
+    <button class="sol-tab" onclick="showSol('parents',this)">Parents</button>
+    <button class="sol-tab" onclick="showSol('schools',this)">Schools</button>
+    <button class="sol-tab" onclick="showSol('policy',this)">Policymakers</button>
+    <button class="sol-tab" onclick="showSol('platforms',this)">Tech Platforms</button>
+  </div>
+
+  {% set solutions = {
+    'all': [
+      ('📱','Digital literacy education','Teach children to evaluate content, recognise misinformation, and understand algorithmic amplification. Begin by age 8.','Reduces harmful content susceptibility by 34% (MediaSmarts, 2022)'),
+      ('⚖️','Active over passive use','Encourage creating, commenting, messaging over passive scrolling. Active use is linked to 43% better wellbeing.','Active use: 43% better wellbeing scores vs passive (multiple studies)'),
+      ('🌙','Screen-free bedtime routines','No devices 1–2 hours before sleep. Charge phones outside bedroom. A single change that can add 1+ hour of sleep.','Improves sleep by 1.1 hrs/night and reduces depression by 28%'),
+      ('🔔','Notification management','Turn off non-essential notifications during school, family time, and after 9 PM. Reduces anxiety loops significantly.','Reducing notifications cut anxiety scores by 18% (RCT, 2021)'),
+      ('🎯','Intentional use planning','Set purpose-driven reasons before opening apps. A simple "why am I opening this?" dramatically reduces mindless use.','Intentional users report 52% higher life satisfaction (Wirtz, 2021)'),
+      ('🏃','Robust offline activities','Ensure rich offline social lives, sports, and hobbies. These are the single most powerful buffer against social media harms.','Children with 3+ offline activities show 60% lower risk of SM harm')
+    ],
+    'parents': [
+      ('💬','Open dialogue, not bans','Talk with your child about online experiences. Banning increases secretive use and damages trust.','Open communication reduces harmful exposure by 55%'),
+      ('📋','Co-create family media agreements','Build usage rules together. When children help set rules, compliance increases dramatically.','Co-created rules result in 72% higher compliance'),
+      ('👀','Transparent monitoring','Use parental controls transparently — tell children what you can see and why. Covert surveillance damages trust.','Transparent monitoring maintains 80% of trust; covert loses 67%'),
+      ('🧠','Model healthy digital habits','Children mirror adult behaviour. Put your own phone away at dinner. Show you can be present without devices.','Parents who model device-free time → children 45% better self-regulation'),
+      ('⚠️','Know the warning signs','Watch for: withdrawal, sleep changes, mood dips after phone use, secretive behaviour. Early intervention is key.','Early intervention reduces severity of harm by 70%'),
+      ('📱','Consider delaying smartphones','Delay full smartphone until 14, unrestricted social media until 16. Evidence supports significantly better outcomes.','Delayed smartphone access (14+) linked to 34% lower adolescent depression')
+    ],
+    'schools': [
+      ('🏫','Phone-free classroom policies','Schools with phone-free policies show improved focus, less bullying, better participation, and better test scores.','Phone-free schools: 14% better test scores, 27% less bullying'),
+      ('📚','Integrated media literacy curriculum','Embed critical media literacy across all subjects — not as a standalone module. Cross-subject integration works better.','Integrated approach reduces misinformation susceptibility 34% more than standalone'),
+      ('🧘','Regular wellbeing check-ins','Anonymous digital wellbeing surveys termly. Schools with surveys identify 3× more at-risk students before crisis.','Regular surveys identify 3× more at-risk students pre-crisis'),
+      ('🤝','Peer support programmes','Train older students as digital peer mentors. Peer-to-peer support is often more accessible than adult interventions.','Peer programmes reduce cyberbullying by 40%'),
+      ('👩‍🏫','Teacher digital competency training','All staff should understand platforms students use, risks, and how to support conversations about online experiences.','Trained staff detect and address harms 60% faster'),
+      ('🌐','Parent engagement','Run termly workshops for parents on platform risks, controls, and warning signs. Family-school coordination is key.','Coordinated approach reduces harmful behaviour by 55% vs school-only')
+    ],
+    'policy': [
+      ('🔒','Enforce robust age verification','Mandate technically effective age verification — current self-declaration systems are trivially bypassed.','UK Online Safety Act (2023) includes binding age verification requirements'),
+      ('📊','Mandate algorithm transparency','Require algorithmic impact assessments for content served to under-18s with independent audit powers.','EU Digital Services Act (2024) includes first mandatory algorithmic audits for minors'),
+      ('⏱️','Default time limits for minors','Require default daily caps for verified under-18 accounts with parental consent required for higher limits.','Australia & Ireland have proposed similar legislation following successful pilots'),
+      ('🔬','Fund independent research','Commission large-scale longitudinal public research. Industry-sponsored research consistently underestimates harms.','UK £15M Digital Futures for Children programme is current gold-standard'),
+      ('💰','Impose meaningful penalties','Fines for child safety violations must genuinely affect platform behaviour — GDPR-style percentage-of-revenue penalties.','GDPR fines up to 4% of global revenue; same model needed for child safety'),
+      ('🌏','International coordination','Social media is global — national regulation alone is insufficient. Support OECD/UN frameworks to prevent jurisdiction shopping.','G7 Digital Ministers agreed child safety coordination framework in 2023')
+    ],
+    'platforms': [
+      ('🛡️','Redesign algorithms for wellbeing','Replace engagement-maximising systems with those optimised for user wellbeing. Technology exists; business will does not.','Chronological feeds show 31% reduction in anxiety vs algorithmic feeds'),
+      ('🎨','Remove harmful design patterns','Eliminate infinite scroll, variable-ratio rewards, public like counts for minors, autoplay, and notification defaults.','Removing autoplay reduced passive session length by 37% in YouTube trials'),
+      ('🔍','Accelerate harmful content removal','Invest adequately in moderation for self-harm, eating disorder, and exploitation content. Same-day removal is achievable.','Same-day removal reduces re-exposure rates by 78%'),
+      ('📱','Youth-specific safety defaults','Under-18 accounts: private by default, no DMs from strangers, no location sharing, restricted content — all opt-out, not opt-in.','Opt-out defaults would protect 85% more minors than current opt-in models')
+    ]
+  } %}
+
+  {% for sec_id, items in solutions.items() %}
+  <div class="sol-section {% if sec_id == 'all' %}active{% endif %}" id="sec-{{ sec_id }}">
+    <div class="sol-grid">
+      {% for icon, title, desc, evidence in items %}
+      <div class="sol-card anim-fade">
+        <div class="sol-card-icon">{{ icon }}</div>
+        <h4>{{ title }}</h4>
+        <p>{{ desc }}</p>
+        <div class="sol-evidence">✓ {{ evidence }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function showSol(id, btn) {
+  document.querySelectorAll('.sol-section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.sol-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
+{% endblock %}

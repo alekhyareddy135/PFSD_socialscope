@@ -1,0 +1,426 @@
+{% extends 'base.html' %}
+{% block title %}Daily Mood Check-in{% endblock %}
+{% block content %}
+<section class="section" style="padding-top:140px;">
+  <div class="container" style="max-width:820px;">
+    <div class="anim-fade text-center" style="margin-bottom:40px;">
+      <span class="tag tag-cyan" style="margin-bottom:16px;">🔥 DAILY CHECK-IN</span>
+      <h1 class="section-title">How Are You Feeling Today?</h1>
+      <p class="section-desc">Track your mood daily, build streaks, and get personalized suggestions to improve your wellbeing.</p>
+    </div>
+
+    <!-- STREAK BANNER (hidden until check-in) -->
+    <div class="card anim-fade" id="streakBanner" style="text-align:center;padding:28px;margin-bottom:28px;background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(239,68,68,.08));border:1px solid rgba(245,158,11,.25);display:none;">
+      <div id="streakFire" style="font-size:52px;margin-bottom:10px;">🔥</div>
+      <div id="streakText" style="font-size:24px;font-weight:800;color:#f59e0b;"></div>
+      <div id="streakSub" style="font-size:14px;color:var(--text2);margin-top:6px;"></div>
+    </div>
+
+    <!-- MOOD SELECTOR CARD -->
+    <div class="card anim-fade" id="checkinCard" style="margin-bottom:28px;">
+      <h3 style="font-size:18px;font-weight:700;margin-bottom:6px;text-align:center;">Select Your Mood</h3>
+      <p style="text-align:center;color:var(--text3);font-size:13px;margin-bottom:24px;">Be honest — this is just for you 💙</p>
+
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;" id="moodGrid">
+        <button class="mood-btn" data-mood="happy" onclick="selectMood('happy')">
+          <span style="font-size:36px;">😊</span><span>Happy</span>
+        </button>
+        <button class="mood-btn" data-mood="sad" onclick="selectMood('sad')">
+          <span style="font-size:36px;">😢</span><span>Sad</span>
+        </button>
+        <button class="mood-btn" data-mood="angry" onclick="selectMood('angry')">
+          <span style="font-size:36px;">😠</span><span>Angry</span>
+        </button>
+        <button class="mood-btn" data-mood="anxious" onclick="selectMood('anxious')">
+          <span style="font-size:36px;">😰</span><span>Anxious</span>
+        </button>
+        <button class="mood-btn" data-mood="neutral" onclick="selectMood('neutral')">
+          <span style="font-size:36px;">😐</span><span>Okay</span>
+        </button>
+      </div>
+
+      <textarea id="moodNote" placeholder="Optional: Add a note about your day... What's on your mind?" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--text);font-size:14px;resize:none;height:80px;box-sizing:border-box;font-family:inherit;outline:none;transition:border-color .2s;" onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+
+      <button class="btn btn-primary" style="width:100%;margin-top:14px;" onclick="submitCheckin()" id="checkinBtn" disabled>
+        <span id="checkinBtnText">👆 Select a mood to continue</span>
+      </button>
+    </div>
+
+    <!-- SUGGESTIONS (shown after check-in) -->
+    <div id="suggestionsSection" style="display:none;">
+      <div class="card anim-fade" style="margin-bottom:24px;background:linear-gradient(135deg,rgba(0,245,212,.06),rgba(123,47,255,.06));border:1px solid rgba(0,245,212,.15);">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:22px;">
+          <span id="checkedMoodEmoji" style="font-size:44px;"></span>
+          <div>
+            <h3 style="font-size:19px;font-weight:700;" id="checkedMoodTitle"></h3>
+            <p style="font-size:14px;color:var(--text2);margin:4px 0 0;" id="checkedMoodSub"></p>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;" id="suggestionsGrid"></div>
+      </div>
+
+      <!-- Breathing Exercise Card (shown for sad/angry/anxious) -->
+      <div class="card anim-fade" id="breathingCard" style="display:none;text-align:center;padding:32px;margin-bottom:24px;">
+        <h3 style="font-size:18px;font-weight:700;margin-bottom:8px;">🌬️ Quick Breathing Exercise</h3>
+        <p style="color:var(--text2);font-size:14px;margin-bottom:24px;">Take 2 minutes to reset with box breathing. It really works!</p>
+        <div id="breathBox" style="width:130px;height:130px;border-radius:16px;border:3px solid var(--cyan);background:rgba(0,245,212,.08);margin:0 auto 18px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--cyan);transition:all 1s ease;cursor:pointer;">Tap Start</div>
+        <div id="breathLabel" style="font-size:14px;color:var(--text2);margin-bottom:18px;min-height:22px;"></div>
+        <div style="display:flex;gap:12px;justify-content:center;">
+          <button class="btn btn-primary" onclick="toggleBoxBreath()" id="breathBtn">▶ Start Exercise</button>
+        </div>
+        <p style="font-size:12px;color:var(--text3);margin-top:12px;">4 cycles • Takes about 64 seconds</p>
+      </div>
+
+      <!-- Navigation -->
+      <div style="text-align:center;margin-top:8px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn" onclick="resetCheckin()">↩ Check in again</button>
+        <a href="/chatbot" class="btn">💬 Talk to Sage</a>
+        <a href="/chat-analysis" class="btn">💭 Analyze Chat</a>
+      </div>
+    </div>
+
+    <!-- HISTORY SECTION -->
+    <div class="card anim-fade" id="historySection" style="margin-top:32px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+        <h3 style="font-size:18px;font-weight:700;">📅 Your Mood History</h3>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <span style="font-size:12px;color:var(--text3);">ID: <span id="userIdDisplay" style="color:var(--cyan);font-family:monospace;"></span></span>
+          <button class="btn btn-sm" onclick="loadHistory()">↻ Refresh</button>
+        </div>
+      </div>
+      <!-- Mood Chart -->
+      <div id="moodChart" style="margin-bottom:20px;display:none;">
+        <h4 style="font-size:14px;color:var(--text3);margin-bottom:12px;font-weight:600;">LAST 7 DAYS</h4>
+        <div id="moodChartBars" style="display:flex;gap:8px;align-items:flex-end;height:80px;"></div>
+        <div style="display:flex;gap:8px;margin-top:6px;" id="moodChartLabels"></div>
+      </div>
+      <div id="historyList"><p style="color:var(--text3);text-align:center;padding:20px;">Loading your history...</p></div>
+    </div>
+  </div>
+</section>
+
+<style>
+.mood-btn {
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  padding:16px 8px;border-radius:14px;border:2px solid var(--border);
+  background:var(--surface2);cursor:pointer;transition:all .2s;
+  font-size:13px;font-weight:600;color:var(--text2);
+}
+.mood-btn:hover { border-color:var(--cyan);transform:translateY(-4px);color:var(--text); }
+.mood-btn.selected { border-color:var(--cyan);background:rgba(0,245,212,.1);color:var(--cyan);transform:translateY(-4px);box-shadow:0 0 14px rgba(0,245,212,.15); }
+.suggestion-chip { background:var(--surface2);border-radius:10px;padding:14px; }
+.suggestion-chip h4 { font-size:13px;font-weight:700;margin-bottom:8px;color:var(--text); }
+.suggestion-chip p { font-size:12px;color:var(--text2);line-height:1.7;margin:0; }
+</style>
+
+<script>
+let selectedMood = null;
+let bbTimer = null, bbPhase = 0, bbCount = 0, bbRunning = false;
+
+// Stable user ID stored in localStorage
+const userId = localStorage.getItem('ss_user_id') || ('user_' + Math.random().toString(36).substr(2, 9));
+localStorage.setItem('ss_user_id', userId);
+document.getElementById('userIdDisplay').textContent = userId;
+
+const moodConfig = {
+  happy: {
+    emoji: '😊', title: "You're feeling happy! 🎉", sub: "That's wonderful — keep this energy going!",
+    messages: ["Share your good mood with someone you care about 📞", "Write down 3 things you're grateful for ✍️", "Do something fun today — you deserve it! 🎉"],
+    music: ["Happy - Pharrell Williams 🎵", "Good as Hell - Lizzo 🎵", "Walking on Sunshine ☀️"],
+    quote: 'Happiness is a direction, not a place. — Sydney J. Harris'
+  },
+  sad: {
+    emoji: '😢', title: "You're feeling sad", sub: "It's okay to feel this way. Be gentle with yourself 💙",
+    messages: ["Talk to a trusted friend or family member 📱", "Watch a comforting movie or show 🎬", "Write your feelings in a journal — let it out 📓"],
+    music: ["Fix You - Coldplay 🎵", "Breathe (2 AM) - Anna Nalick 🎵", "Someone Like You - Adele 🎵"],
+    quote: 'Even the darkest night will end and the sun will rise. — Victor Hugo',
+    breathing: true
+  },
+  angry: {
+    emoji: '😠', title: "You're feeling angry", sub: "Your feelings are valid. Let's channel this energy 💪",
+    messages: ["Try box breathing to reset (see below) 🌬️", "Go for a brisk walk to release tension 🏃", "Write it out — then decide what to do 📝"],
+    music: ["Roar - Katy Perry 🎵", "Fighter - Christina Aguilera 🎵", "Shake It Out - Florence 🎵"],
+    quote: "For every minute you are angry you lose sixty seconds of happiness. — Emerson",
+    breathing: true
+  },
+  anxious: {
+    emoji: '😰', title: "You're feeling anxious", sub: "Take a breath. You're safe. Let's slow things down 🌿",
+    messages: ["5-4-3-2-1 grounding: Name 5 things you see 👁️", "Breathe slowly — try the exercise below 🌬️", "Step outside for fresh air for 5 minutes 🌤️"],
+    music: ["Weightless - Marconi Union 🎵", "Clair de Lune - Debussy 🎵", "Nature rain sounds 🌧️"],
+    quote: "You don't have to control your thoughts. You just have to stop letting them control you.",
+    breathing: true
+  },
+  neutral: {
+    emoji: '😐', title: "You're feeling okay", sub: "Steady and balanced — a good place to be 😌",
+    messages: ["Try something creative today 🎨", "Learn something new — YouTube, podcast, book 📚", "Reach out to a friend you haven't talked to in a while 📞"],
+    music: ["Lo-fi hip hop beats 🎵", "Your favorite playlist 🎧", "Nature sounds 🌿"],
+    quote: 'The present moment is the only moment available to us. — Thich Nhat Hanh'
+  },
+};
+
+const moodColors = { happy: '#22c55e', sad: '#60a5fa', angry: '#ef4444', anxious: '#f59e0b', neutral: '#8b5cf6' };
+
+function selectMood(mood) {
+  selectedMood = mood;
+  document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelector(`[data-mood="${mood}"]`).classList.add('selected');
+  const btn = document.getElementById('checkinBtn');
+  btn.disabled = false;
+  document.getElementById('checkinBtnText').textContent = `Submit ${moodConfig[mood].emoji} Check-in`;
+}
+
+async function submitCheckin() {
+  if (!selectedMood) return;
+  const note = document.getElementById('moodNote').value.trim();
+  document.getElementById('checkinBtnText').innerHTML = '<span class="loading-spinner"></span> Saving...';
+  document.getElementById('checkinBtn').disabled = true;
+
+  // Always update local streak immediately for responsiveness
+  updateLocalStreak();
+
+  try {
+    const res = await fetch('/api/mood-checkin', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({mood: selectedMood, user_id: userId, note})
+    });
+    if (!res.ok) throw new Error('Server error');
+    const data = await res.json();
+    showResults(data);
+  } catch(e) {
+    // Offline/error fallback — still show results using local data
+    const streak = getLocalStreak();
+    showResults({
+      mood: selectedMood,
+      streak: streak,
+      message: streak >= 7 ? `⭐ Amazing! ${streak} day streak!` :
+                streak >= 3 ? `🌟 Great! ${streak} days in a row!` :
+                '✅ Day 1 — every journey starts here!',
+      suggestions: moodConfig[selectedMood],
+      saved: false
+    });
+  }
+}
+
+function updateLocalStreak() {
+  const history = JSON.parse(localStorage.getItem('mood_history') || '[]');
+  const today = new Date().toISOString().split('T')[0];
+  if (!history.includes(today)) {
+    history.push(today);
+    localStorage.setItem('mood_history', JSON.stringify(history.slice(-60)));
+  }
+}
+
+function getLocalStreak() {
+  const history = JSON.parse(localStorage.getItem('mood_history') || '[]');
+  const sorted = [...new Set(history)].sort().reverse();
+  let streak = 0;
+  const today = new Date();
+  for (let i = 0; i < sorted.length; i++) {
+    const expected = new Date(today);
+    expected.setDate(today.getDate() - i);
+    const expectedStr = expected.toISOString().split('T')[0];
+    if (sorted[i] === expectedStr) streak++;
+    else break;
+  }
+  return Math.max(streak, 1);
+}
+
+function showResults(data) {
+  const cfg = moodConfig[data.mood] || moodConfig.neutral;
+
+  // Show streak banner
+  const streakBanner = document.getElementById('streakBanner');
+  streakBanner.style.display = 'block';
+  streakBanner.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+  document.getElementById('streakText').textContent = data.message || `🔥 ${data.streak} day streak!`;
+  document.getElementById('streakSub').textContent =
+    data.streak >= 7 ? "You're building an incredible habit! Keep it up! 🏆" :
+    data.streak >= 3 ? "Consistency is key — keep going!" :
+    "First steps count — the journey starts now! 🌟";
+  if (data.streak >= 7) document.getElementById('streakFire').textContent = '🏆';
+  else if (data.streak >= 5) document.getElementById('streakFire').textContent = '⭐';
+
+  // Hide check-in, show results
+  document.getElementById('checkinCard').style.display = 'none';
+  document.getElementById('suggestionsSection').style.display = 'block';
+
+  document.getElementById('checkedMoodEmoji').textContent = cfg.emoji;
+  document.getElementById('checkedMoodTitle').textContent = cfg.title;
+  document.getElementById('checkedMoodSub').textContent = cfg.sub;
+
+  document.getElementById('suggestionsGrid').innerHTML = `
+    <div class="suggestion-chip">
+      <h4>💡 Activities For You</h4>
+      ${cfg.messages.map(m => `<p style="margin-bottom:7px;padding-bottom:7px;border-bottom:1px solid var(--border);">• ${m}</p>`).join('')}
+    </div>
+    <div class="suggestion-chip">
+      <h4>🎵 Music For Your Mood</h4>
+      ${cfg.music.map(m => `<p style="margin-bottom:7px;padding-bottom:7px;border-bottom:1px solid var(--border);">• ${m}</p>`).join('')}
+    </div>
+    <div class="suggestion-chip" style="grid-column:1/-1;">
+      <h4>✨ Quote of the Moment</h4>
+      <p style="font-style:italic;font-size:13px;line-height:1.8;">"${cfg.quote}"</p>
+    </div>
+  `;
+
+  if (cfg.breathing) {
+    document.getElementById('breathingCard').style.display = 'block';
+  }
+
+  // Scroll to results
+  setTimeout(() => {
+    document.getElementById('suggestionsSection').scrollIntoView({behavior: 'smooth', block: 'start'});
+  }, 200);
+
+  loadHistory();
+}
+
+function resetCheckin() {
+  selectedMood = null;
+  document.getElementById('checkinCard').style.display = 'block';
+  document.getElementById('suggestionsSection').style.display = 'none';
+  document.getElementById('streakBanner').style.display = 'none';
+  document.getElementById('breathingCard').style.display = 'none';
+  document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('checkinBtn').disabled = true;
+  document.getElementById('checkinBtnText').textContent = '👆 Select a mood to continue';
+  document.getElementById('moodNote').value = '';
+  stopBoxBreath();
+  document.getElementById('checkinCard').scrollIntoView({behavior: 'smooth', block: 'start'});
+}
+
+// ── HISTORY ──────────────────────────────────────────────────────────────
+
+async function loadHistory() {
+  try {
+    const res = await fetch(`/api/mood-history?user_id=${encodeURIComponent(userId)}`);
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    renderHistory(data);
+  } catch(e) {
+    document.getElementById('historyList').innerHTML =
+      '<p style="color:var(--text3);text-align:center;padding:20px;">Check in daily to build your history! 🌟</p>';
+  }
+}
+
+function renderHistory(items) {
+  if (!items || !items.length) {
+    document.getElementById('historyList').innerHTML =
+      '<p style="color:var(--text3);text-align:center;padding:20px;">No check-ins yet. Do your first one above! 🌟</p>';
+    document.getElementById('moodChart').style.display = 'none';
+    return;
+  }
+
+  const icons = {happy: '😊', sad: '😢', angry: '😠', anxious: '😰', neutral: '😐'};
+
+  // Show mini chart for last 7
+  if (items.length >= 2) {
+    const last7 = items.slice(0, 7).reverse();
+    document.getElementById('moodChart').style.display = 'block';
+    const maxH = 70;
+    document.getElementById('moodChartBars').innerHTML = last7.map((item, i) => {
+      const h = 30 + Math.random() * 40; // visual representation
+      const color = moodColors[item.mood] || '#8b5cf6';
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <span style="font-size:14px;">${icons[item.mood]||'😐'}</span>
+        <div style="width:100%;height:${maxH}px;display:flex;align-items:flex-end;">
+          <div style="width:100%;height:${h}px;background:${color};border-radius:6px 6px 0 0;opacity:.75;transition:height .5s ease;"></div>
+        </div>
+      </div>`;
+    }).join('');
+    document.getElementById('moodChartLabels').innerHTML = last7.map(item =>
+      `<span style="flex:1;text-align:center;font-size:10px;color:var(--text3);">${(item.date||'').split('-').slice(1).join('/')}</span>`
+    ).join('');
+  }
+
+  document.getElementById('historyList').innerHTML = items.slice(0, 14).map(item => `
+    <div style="display:flex;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:26px;flex-shrink:0;">${icons[item.mood] || '😐'}</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:600;text-transform:capitalize;color:${moodColors[item.mood]||'var(--text)'};">${item.mood}</div>
+        ${item.note ? `<div style="font-size:12px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">"${item.note.substring(0, 80)}"</div>` : ''}
+      </div>
+      <span style="font-size:12px;color:var(--text3);flex-shrink:0;">${item.date || (item.timestamp||'').split('T')[0]}</span>
+    </div>
+  `).join('');
+}
+
+// ── BOX BREATHING ─────────────────────────────────────────────────────────
+
+const bbPhases = [
+  {t: 'Inhale', d: 4, scale: 'scale(1.25)', bg: 'rgba(0,245,212,.35)', label: 'Breathe in slowly...'},
+  {t: 'Hold', d: 4, scale: 'scale(1.25)', bg: 'rgba(99,102,241,.35)', label: 'Hold it...'},
+  {t: 'Exhale', d: 4, scale: 'scale(0.85)', bg: 'rgba(16,185,129,.25)', label: 'Breathe out slowly...'},
+  {t: 'Hold', d: 4, scale: 'scale(0.85)', bg: 'rgba(245,158,11,.25)', label: 'Hold it...'},
+];
+
+function toggleBoxBreath() {
+  if (bbRunning) {
+    stopBoxBreath();
+  } else {
+    startBoxBreath();
+  }
+}
+
+function startBoxBreath() {
+  bbRunning = true;
+  bbPhase = 0;
+  bbCount = 0;
+  document.getElementById('breathBtn').textContent = '■ Stop';
+  runBBPhase();
+}
+
+function stopBoxBreath() {
+  bbRunning = false;
+  if (bbTimer) { clearInterval(bbTimer); bbTimer = null; }
+  const box = document.getElementById('breathBox');
+  if (box) { box.textContent = 'Tap Start'; box.style.transform = 'scale(1)'; box.style.background = 'rgba(0,245,212,.08)'; }
+  const btn = document.getElementById('breathBtn');
+  if (btn) btn.textContent = '▶ Start Exercise';
+  const lbl = document.getElementById('breathLabel');
+  if (lbl) lbl.textContent = '';
+}
+
+function runBBPhase() {
+  if (!bbRunning) return;
+  const p = bbPhases[bbPhase];
+  const box = document.getElementById('breathBox');
+  const lbl = document.getElementById('breathLabel');
+  if (!box) return;
+
+  box.textContent = p.t;
+  box.style.transform = p.scale;
+  box.style.background = p.bg;
+  box.style.borderColor = 'var(--cyan)';
+  lbl.textContent = `${p.label} (${p.d}s) — Cycle ${Math.floor(bbCount / 4) + 1} of 4`;
+
+  let sec = p.d;
+  bbTimer = setInterval(() => {
+    sec--;
+    if (sec > 0) {
+      lbl.textContent = `${p.label} — ${sec}s remaining`;
+    } else {
+      clearInterval(bbTimer);
+      bbTimer = null;
+      bbCount++;
+      if (bbCount >= 16) {
+        // Done!
+        bbRunning = false;
+        box.textContent = 'Done! 😊';
+        box.style.transform = 'scale(1)';
+        lbl.textContent = 'Great job! How do you feel now? 💙';
+        document.getElementById('breathBtn').textContent = '▶ Do Again';
+      } else {
+        bbPhase = (bbPhase + 1) % 4;
+        runBBPhase();
+      }
+    }
+  }, 1000);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Load history on page load
+loadHistory();
+</script>
+{% endblock %}

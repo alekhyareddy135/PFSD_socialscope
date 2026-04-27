@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+{% block title %}Chat Emotion Analysis{% endblock %}
+{% block content %}
+<section class="section" style="padding-top:140px;">
+  <div class="container" style="max-width:900px;">
+    <div class="anim-fade text-center" style="margin-bottom:40px;">
+      <span class="tag tag-cyan" style="margin-bottom:16px;">💬 CHAT ANALYSIS</span>
+      <h1 class="section-title">Chat Emotion Analyzer</h1>
+      <p class="section-desc">Upload or paste your WhatsApp/text conversation. We'll detect emotional patterns, stress signals, and tone trends over time — all privately in your browser.</p>
+    </div>
+
+    <!-- INPUT CARD -->
+    <div class="card anim-fade" style="margin-bottom:32px;">
+      <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+        <button class="btn btn-sm tab-btn active" id="tabPaste" onclick="switchTab('paste')">📋 Paste Conversation</button>
+        <button class="btn btn-sm tab-btn" id="tabUpload" onclick="switchTab('upload')">📁 Upload .txt File</button>
+        <button class="btn btn-sm tab-btn" id="tabSample" onclick="loadSample()">🔍 Load Sample</button>
+      </div>
+
+      <div id="pasteArea">
+        <textarea id="chatInput" placeholder="Paste your WhatsApp chat or conversation here...&#10;&#10;Example format:&#10;12/01/2025, 10:30 - Alice: I'm feeling really tired lately&#10;12/01/2025, 10:31 - Bob: Me too, work has been stressful&#10;13/01/2025, 09:15 - Alice: Today was actually good!&#10;&#10;OR just paste plain conversation lines like:&#10;Alice: I'm feeling anxious about exams&#10;Bob: Don't worry, you've got this!" style="width:100%;min-height:200px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;color:var(--text);font-family:monospace;font-size:13px;resize:vertical;box-sizing:border-box;"></textarea>
+      </div>
+      <div id="uploadArea" style="display:none;">
+        <div id="dropZone" onclick="document.getElementById('fileInput').click()" style="border:2px dashed var(--border);border-radius:12px;padding:40px;text-align:center;cursor:pointer;transition:border-color .2s;" onmouseenter="this.style.borderColor='var(--cyan)'" onmouseleave="this.style.borderColor='var(--border)'">
+          <div style="font-size:40px;margin-bottom:12px;">📁</div>
+          <p style="color:var(--text2);">Drop your .txt chat export here or click to browse</p>
+          <p style="font-size:12px;color:var(--text3);margin-top:8px;">Supports WhatsApp export format (.txt)</p>
+          <input type="file" id="fileInput" accept=".txt" style="display:none;" onchange="handleFileUpload(event)">
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:16px;align-items:center;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="analyzeChat()" id="analyzeBtn">
+          <span id="analyzeBtnText">🔍 Analyze Emotions</span>
+        </button>
+        <button class="btn" onclick="clearChat()" style="opacity:.7;">✕ Clear</button>
+        <span style="font-size:12px;color:var(--text3);">🔒 Processed locally — no chat content stored</span>
+      </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div id="chatResults" style="display:none;">
+      <!-- Insights Banner -->
+      <div class="card anim-fade" id="insightsBanner" style="background:linear-gradient(135deg,rgba(0,245,212,.08),rgba(123,47,255,.08));border:1px solid rgba(0,245,212,.2);margin-bottom:24px;">
+        <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;">🔍 Key Insights</h3>
+        <div id="insightsList"></div>
+      </div>
+
+      <!-- Stats Row -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:24px;" id="statsRow"></div>
+
+      <!-- Daily Breakdown -->
+      <div class="card anim-fade" style="margin-bottom:24px;">
+        <h3 style="font-size:18px;font-weight:700;margin-bottom:20px;">📅 Daily Mood Breakdown</h3>
+        <div id="dailyChart"></div>
+      </div>
+
+      <!-- Suggestions based on overall mood -->
+      <div class="card anim-fade" id="chatSuggestions" style="background:var(--surface);">
+        <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;">💡 Personalized Suggestions</h3>
+        <div id="suggestionContent"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+const SAMPLE_CHAT = `12/01/2025, 09:00 - Alex: Ugh, can't sleep again. So anxious about the presentation
+12/01/2025, 09:02 - Sam: Oh no, you'll do great though!
+12/01/2025, 09:05 - Alex: I hope so. Just feeling really stressed lately
+13/01/2025, 10:15 - Alex: The presentation went okay I think
+13/01/2025, 10:17 - Sam: That's good! Better than yesterday?
+13/01/2025, 10:20 - Alex: Yeah a bit. Still tired though
+14/01/2025, 08:30 - Alex: Today actually feels better. Had a good night's sleep
+14/01/2025, 08:32 - Sam: Amazing! Sleep makes such a difference
+14/01/2025, 11:00 - Alex: Feeling more positive and motivated today!
+15/01/2025, 09:00 - Alex: Really happy with how things are going. The project is going well
+15/01/2025, 09:05 - Sam: So glad to hear that! You deserve this happiness`;
+
+function switchTab(tab) {
+  document.getElementById('pasteArea').style.display = tab === 'paste' ? 'block' : 'none';
+  document.getElementById('uploadArea').style.display = tab === 'upload' ? 'block' : 'none';
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(tab === 'paste' ? 'tabPaste' : 'tabUpload').classList.add('active');
+}
+
+function loadSample() {
+  switchTab('paste');
+  document.getElementById('chatInput').value = SAMPLE_CHAT;
+}
+
+function handleFileUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    switchTab('paste');
+    document.getElementById('chatInput').value = ev.target.result;
+  };
+  reader.readAsText(file);
+}
+
+function clearChat() {
+  document.getElementById('chatInput').value = '';
+  document.getElementById('chatResults').style.display = 'none';
+}
+
+async function analyzeChat() {
+  const text = document.getElementById('chatInput').value.trim();
+  if (!text) { alert('Please paste or upload a conversation first.'); return; }
+  
+  const btn = document.getElementById('analyzeBtn');
+  document.getElementById('analyzeBtnText').innerHTML = '<span class="loading-spinner"></span> Analyzing...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/chat-analyze', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({text})
+    });
+    const data = await res.json();
+    if (data.error) { alert(data.error); return; }
+    renderResults(data);
+  } catch(e) {
+    alert('Analysis failed. Please try again.');
+  } finally {
+    document.getElementById('analyzeBtnText').textContent = '🔍 Analyze Emotions';
+    btn.disabled = false;
+  }
+}
+
+function renderResults(data) {
+  document.getElementById('chatResults').style.display = 'block';
+  document.getElementById('chatResults').scrollIntoView({behavior:'smooth', block:'start'});
+
+  // Insights
+  const insightsList = document.getElementById('insightsList');
+  insightsList.innerHTML = data.insights.map(i =>
+    `<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;">
+      <span style="font-size:18px;flex-shrink:0;">💡</span>
+      <p style="color:var(--text2);font-size:15px;margin:0;">${i}</p>
+    </div>`
+  ).join('');
+
+  // Stats
+  const overallColor = data.overall_avg >= 0.22 ? '#22c55e' : data.overall_avg <= -0.18 ? '#ef4444' : '#f59e0b';
+  document.getElementById('statsRow').innerHTML = `
+    <div class="card" style="text-align:center;padding:20px;">
+      <div style="font-size:28px;font-weight:800;color:${overallColor};">${data.overall_avg > 0 ? '+' : ''}${data.overall_avg}</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:4px;">Overall Score</div>
+    </div>
+    <div class="card" style="text-align:center;padding:20px;">
+      <div style="font-size:28px;font-weight:800;color:var(--cyan);">${data.total_messages}</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:4px;">Messages</div>
+    </div>
+    <div class="card" style="text-align:center;padding:20px;">
+      <div style="font-size:28px;font-weight:800;color:var(--purple);">${data.days_analyzed}</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:4px;">Days Analyzed</div>
+    </div>
+    <div class="card" style="text-align:center;padding:20px;">
+      <div style="font-size:20px;font-weight:700;color:var(--text);">${data.trend}</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:4px;">Trend</div>
+    </div>
+  `;
+
+  // Daily chart
+  const daily = data.daily;
+  const maxAbs = Math.max(...daily.map(d => Math.abs(d.avg_score)), 0.3);
+  document.getElementById('dailyChart').innerHTML = daily.map(d => {
+    const pct = Math.abs(d.avg_score) / maxAbs * 100;
+    const color = d.avg_score >= 0.22 ? '#22c55e' : d.avg_score <= -0.18 ? '#ef4444' : '#f59e0b';
+    return `<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+      <span style="font-size:18px;width:24px;">${d.emoji}</span>
+      <span style="font-size:12px;color:var(--text3);width:90px;flex-shrink:0;">${d.date}</span>
+      <div style="flex:1;background:var(--surface2);border-radius:6px;height:24px;overflow:hidden;">
+        <div style="width:${pct}%;background:${color};height:100%;border-radius:6px;transition:width .8s ease;display:flex;align-items:center;padding-left:8px;">
+          <span style="font-size:11px;color:#000;font-weight:600;">${d.mood}</span>
+        </div>
+      </div>
+      <span style="font-size:12px;color:var(--text3);width:60px;text-align:right;">${d.count} msgs</span>
+    </div>`;
+  }).join('') || '<p style="color:var(--text3);text-align:center;">Not enough dated messages to show daily breakdown</p>';
+
+  // Suggestions
+  let mood = data.overall_avg >= 0.22 ? 'happy' : data.overall_avg <= -0.18 ? 'sad' : 'neutral';
+  if (data.trend.includes('📉')) mood = 'anxious';
+  renderSuggestions(mood);
+}
+
+function renderSuggestions(mood) {
+  const suggestions = {
+    happy: { icon:'😊', music:['Happy - Pharrell Williams','Good as Hell - Lizzo'], tips:['Share your joy with someone 📞','Write in a gratitude journal ✍️'], quote:'Happiness multiplies when shared.' },
+    sad: { icon:'💙', music:['Fix You - Coldplay','The Night Will Always Win'], tips:['Talk to a friend or family member 📱','Try a short walk outdoors 🌿'], quote:'Even the darkest night will end and the sun will rise. — Hugo', breathing:true },
+    anxious: { icon:'🌿', music:['Weightless - Marconi Union','Clair de Lune - Debussy'], tips:['4-7-8 breathing: inhale 4s, hold 7s, exhale 8s 🌬️','Ground yourself: name 5 things you can see 👁️'], quote:"You don't have to control your thoughts. Just stop letting them control you.", breathing:true },
+    neutral: { icon:'😌', music:['Lo-fi hip hop beats 🎵','Nature sounds playlist 🌿'], tips:['Try something creative today 🎨','Reach out to an old friend 📞'], quote:'The present moment is the only moment available to us.' }
+  };
+  const s = suggestions[mood] || suggestions.neutral;
+  document.getElementById('suggestionContent').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;">
+      <div style="background:var(--surface2);padding:16px;border-radius:12px;">
+        <div style="font-size:14px;font-weight:600;margin-bottom:10px;">🎵 Music For Your Mood</div>
+        ${s.music.map(m=>`<div style="font-size:13px;color:var(--text2);padding:6px 0;border-bottom:1px solid var(--border);">${m}</div>`).join('')}
+      </div>
+      <div style="background:var(--surface2);padding:16px;border-radius:12px;">
+        <div style="font-size:14px;font-weight:600;margin-bottom:10px;">💡 Try These Activities</div>
+        ${s.tips.map(t=>`<div style="font-size:13px;color:var(--text2);padding:6px 0;border-bottom:1px solid var(--border);">${t}</div>`).join('')}
+      </div>
+      <div style="background:var(--surface2);padding:16px;border-radius:12px;">
+        <div style="font-size:14px;font-weight:600;margin-bottom:10px;">✨ Quote For You</div>
+        <p style="font-size:13px;color:var(--text2);font-style:italic;line-height:1.7;">"${s.quote}"</p>
+        ${s.breathing ? `<button onclick="document.getElementById('breathingModal').style.display='flex'" class="btn btn-sm" style="margin-top:10px;width:100%;">🌬️ Start Breathing Exercise</button>` : ''}
+      </div>
+    </div>`;
+}
+</script>
+
+<!-- Breathing Modal -->
+<div id="breathingModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:1000;align-items:center;justify-content:center;" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px;max-width:400px;text-align:center;">
+    <h3 style="font-size:22px;font-weight:700;margin-bottom:8px;">Box Breathing</h3>
+    <p style="color:var(--text2);font-size:14px;margin-bottom:24px;">A simple technique to reduce stress instantly</p>
+    <div id="breathCircle" style="width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(0,245,212,.3),rgba(0,245,212,.05));border:3px solid var(--cyan);margin:0 auto 20px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--cyan);transition:all 1s ease;">Ready</div>
+    <div id="breathInstructions" style="color:var(--text2);font-size:14px;margin-bottom:20px;min-height:40px;">Press Start to begin</div>
+    <div style="display:flex;gap:12px;justify-content:center;">
+      <button class="btn btn-primary" onclick="startBreathing()">▶ Start</button>
+      <button class="btn" onclick="stopBreathing();document.getElementById('breathingModal').style.display='none'">✕ Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let breathInterval = null;
+const breathPhases = [
+  {text:'Inhale...', dur:4000, scale:'scale(1.3)', color:'rgba(0,245,212,.5)'},
+  {text:'Hold...', dur:4000, scale:'scale(1.3)', color:'rgba(99,102,241,.5)'},
+  {text:'Exhale...', dur:4000, scale:'scale(0.85)', color:'rgba(16,185,129,.3)'},
+  {text:'Hold...', dur:4000, scale:'scale(0.85)', color:'rgba(245,158,11,.3)'},
+];
+let breathIdx = 0, breathCount = 0;
+function startBreathing() {
+  stopBreathing();
+  breathIdx = 0; breathCount = 0;
+  runBreathPhase();
+}
+function runBreathPhase() {
+  const p = breathPhases[breathIdx];
+  const circ = document.getElementById('breathCircle');
+  const inst = document.getElementById('breathInstructions');
+  circ.style.transform = p.scale;
+  circ.style.background = `radial-gradient(circle, ${p.color}, rgba(0,0,0,.1))`;
+  circ.textContent = p.text;
+  inst.textContent = `${p.text.replace('...','')} for ${p.dur/1000} seconds (Cycle ${Math.floor(breathCount/4)+1}/4)`;
+  breathInterval = setTimeout(() => {
+    breathIdx = (breathIdx+1)%4;
+    breathCount++;
+    if(breathCount < 16) runBreathPhase();
+    else { circ.textContent='Done! 😊'; inst.textContent='Great job! How do you feel now?'; circ.style.transform='scale(1)'; }
+  }, p.dur);
+}
+function stopBreathing() { if(breathInterval){ clearTimeout(breathInterval); breathInterval=null; } }
+</script>
+{% endblock %}

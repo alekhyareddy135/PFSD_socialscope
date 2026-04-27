@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% block title %}NLP Analyzer{% endblock %}
+{% block content %}
+
+<div class="page-hero">
+  <div class="container page-hero-content">
+    <div class="overline">NLP Engine</div>
+    <h1>Sentiment <span style="color:var(--cyan);">Analyzer</span></h1>
+    <p>Paste any text — social media post, news article, research excerpt, or personal reflection — and our NLP engine will instantly analyse its sentiment, detect topics, extract key phrases, and assess readability.</p>
+  </div>
+</div>
+
+<div class="container" style="padding-bottom:80px;">
+
+  <div class="analyzer-layout">
+
+    <!-- INPUT PANEL -->
+    <div>
+      <div class="analyzer-input-area">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <span style="font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;">Input text</span>
+          <span id="charCount" style="font-size:12px;color:var(--text3);">0 / 5000</span>
+        </div>
+        <textarea class="analyzer-textarea" id="inputText"
+          placeholder="Enter any text related to social media and youth wellbeing...&#10;&#10;Example: 'Instagram makes teenagers feel anxious and insecure about their body image, but it also helps LGBTQ+ youth find supportive communities.'"
+          oninput="updateCharCount(this)"></textarea>
+
+        <div style="margin-top:14px;">
+          <div style="font-size:12px;color:var(--text3);margin-bottom:8px;">Try a sample:</div>
+          <div class="sample-btns">
+            <button class="sample-btn" onclick="setSample(0)">😟 Negative post</button>
+            <button class="sample-btn" onclick="setSample(1)">😊 Positive post</button>
+            <button class="sample-btn" onclick="setSample(2)">😐 Research text</button>
+            <button class="sample-btn" onclick="setSample(3)">🤔 Mixed opinion</button>
+            <button class="sample-btn" onclick="setSample(4)">📚 Educational</button>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:18px;">
+          <button class="btn btn-cyan" onclick="runAnalysis()" id="analyzeBtn" style="flex:1;justify-content:center;">
+            🧠 Analyze Text
+          </button>
+          <button class="btn btn-ghost" onclick="clearAll()" style="padding:12px 18px;">✕ Clear</button>
+        </div>
+      </div>
+
+      <!-- HISTORY LOG -->
+      <div style="margin-top:20px;padding:20px;border-radius:var(--r-lg);background:var(--surface);border:1px solid var(--border);">
+        <div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;">Analysis history (this session)</div>
+        <div id="historyLog">
+          <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <p>No analyses yet. Enter text above to begin.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULT PANEL -->
+    <div>
+      <div class="nlp-result" id="resultPanel">
+        <div class="empty-state" id="resultEmpty">
+          <div class="empty-state-icon">🧠</div>
+          <p>Analysis results will appear here</p>
+        </div>
+        <div id="resultContent" style="display:none;">
+
+          <!-- SENTIMENT -->
+          <div class="sentiment-display" id="sentimentDisplay">
+            <div class="sentiment-emoji" id="sentEmoji">😐</div>
+            <div>
+              <div class="sentiment-label" id="sentLabel">Neutral</div>
+              <div class="sentiment-score" id="sentScore">Score: 0.000 · Confidence: –%</div>
+            </div>
+          </div>
+
+          <!-- SCORE BARS -->
+          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+            <div class="score-bar-wrap">
+              <div class="score-bar-label"><span>Positivity</span><span id="posVal">0%</span></div>
+              <div class="score-bar-track"><div class="score-bar-fill" id="posBar" style="width:0%;background:var(--green);"></div></div>
+            </div>
+            <div class="score-bar-wrap">
+              <div class="score-bar-label"><span>Negativity</span><span id="negVal">0%</span></div>
+              <div class="score-bar-track"><div class="score-bar-fill" id="negBar" style="width:0%;background:var(--red);"></div></div>
+            </div>
+            <div class="score-bar-wrap">
+              <div class="score-bar-label"><span>Confidence</span><span id="confVal">0%</span></div>
+              <div class="score-bar-track"><div class="score-bar-fill" id="confBar" style="width:0%;background:var(--cyan);"></div></div>
+            </div>
+          </div>
+
+          <div style="height:1px;background:var(--border);margin-bottom:20px;"></div>
+
+          <!-- TOPICS -->
+          <div style="margin-bottom:20px;">
+            <div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Detected Topics</div>
+            <div class="topic-chips" id="topicChips">—</div>
+          </div>
+
+          <!-- KEY PHRASES -->
+          <div style="margin-bottom:20px;">
+            <div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Key Phrases</div>
+            <div class="keyphrase-grid" id="keyphrases">—</div>
+          </div>
+
+          <div style="height:1px;background:var(--border);margin-bottom:20px;"></div>
+
+          <!-- METADATA -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+            <div style="padding:12px;background:var(--surface2);border-radius:var(--r-sm);text-align:center;">
+              <div style="font-size:20px;font-weight:700;font-family:var(--font-display);color:var(--text);" id="wordCountEl">0</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:3px;">words</div>
+            </div>
+            <div style="padding:12px;background:var(--surface2);border-radius:var(--r-sm);text-align:center;">
+              <div style="font-size:20px;font-weight:700;font-family:var(--font-display);color:var(--cyan);" id="readabilityEl">0</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:3px;">readability</div>
+            </div>
+            <div style="padding:12px;background:var(--surface2);border-radius:var(--r-sm);text-align:center;">
+              <div style="font-size:12px;font-weight:600;color:var(--text);line-height:1.3;margin-top:4px;" id="ageLevelEl">–</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:3px;">age level</div>
+            </div>
+          </div>
+
+          <!-- POSITIVE/NEGATIVE KEYWORDS -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;">
+            <div style="padding:14px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.15);border-radius:var(--r-sm);">
+              <div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:8px;">POSITIVE SIGNALS</div>
+              <div id="posKeywords" style="font-size:12px;color:var(--text2);line-height:1.8;">—</div>
+            </div>
+            <div style="padding:14px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:var(--r-sm);">
+              <div style="font-size:11px;font-weight:600;color:var(--red);margin-bottom:8px;">NEGATIVE SIGNALS</div>
+              <div id="negKeywords" style="font-size:12px;color:var(--text2);line-height:1.8;">—</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- HOW IT WORKS -->
+      <div style="margin-top:20px;padding:22px;border-radius:var(--r-lg);background:var(--surface);border:1px solid var(--border);">
+        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;">How the NLP engine works</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          {% for step in [
+            ('1','Tokenization','Text is split into tokens (words) and normalised to lowercase.'),
+            ('2','Lexicon Matching','Each token is matched against a curated 150+ word sentiment lexicon with weighted scores.'),
+            ('3','Negation Handling','Words like "not", "never", "isn\'t" flip the polarity of surrounding tokens.'),
+            ('4','Topic Detection','8 predefined topic clusters are matched against the full text.'),
+            ('5','Score Normalisation','Raw score is normalised to -1..+1 using a square-root word-count dampener.'),
+          ] %}
+          <div style="display:flex;gap:12px;align-items:flex-start;">
+            <div style="width:22px;height:22px;border-radius:50%;background:rgba(0,245,212,.15);color:var(--cyan);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">{{ step[0] }}</div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--text);">{{ step[1] }}</div>
+              <div style="font-size:12px;color:var(--text3);line-height:1.5;">{{ step[2] }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+const SAMPLES = [
+  "Instagram is making my teenage daughter feel terrible about her body. She spends hours comparing herself to influencers and now she's developed serious anxiety and depression. Social media is addicting and harmful to her mental health.",
+  "I discovered an amazing supportive community on TikTok for teens with chronic illness. It's been so helpful and empowering. Social media helps me feel connected, less lonely, and gives me creative outlets to express myself.",
+  "Research indicates that social media usage among adolescents presents both opportunities and challenges. Studies show correlation between heavy passive use and depression, while active engagement appears beneficial for social connection.",
+  "Social media is complicated. My son learned coding skills from YouTube which is amazing, but he's also being cyberbullied on Instagram and his sleep is suffering. I honestly don't know if the benefits outweigh the risks.",
+  "Educational platforms like Khan Academy and YouTube have democratised access to quality learning resources for millions of students worldwide, particularly benefiting those in low-income households who lack access to private tutoring."
+];
+
+let sessionHistory = [];
+
+function setSample(i) {
+  document.getElementById('inputText').value = SAMPLES[i];
+  updateCharCount(document.getElementById('inputText'));
+}
+
+function updateCharCount(el) {
+  document.getElementById('charCount').textContent = el.value.length + ' / 5000';
+}
+
+function clearAll() {
+  document.getElementById('inputText').value = '';
+  updateCharCount(document.getElementById('inputText'));
+  document.getElementById('resultEmpty').style.display = 'block';
+  document.getElementById('resultContent').style.display = 'none';
+}
+
+async function runAnalysis() {
+  const text = document.getElementById('inputText').value.trim();
+  if (!text || text.length < 10) { showToast('Please enter at least 10 characters', 'error'); return; }
+
+  const btn = document.getElementById('analyzeBtn');
+  btn.innerHTML = '<span class="loading-spinner"></span> Analyzing...';
+  btn.disabled = true;
+
+  try {
+    const data = await apiPost('/api/analyze', { text });
+    if (data.error) { showToast(data.error, 'error'); return; }
+    renderResult(data);
+    addToHistory(data);
+    showToast('Analysis complete ✓', 'success');
+  } catch(e) {
+    showToast('Analysis failed. Is the server running?', 'error');
+  } finally {
+    btn.innerHTML = '🧠 Analyze Text';
+    btn.disabled = false;
+  }
+}
+
+function renderResult(d) {
+  document.getElementById('resultEmpty').style.display = 'none';
+  document.getElementById('resultContent').style.display = 'block';
+
+  const s = d.sentiment;
+  document.getElementById('sentEmoji').textContent = s.emoji;
+  document.getElementById('sentLabel').textContent = s.label;
+  document.getElementById('sentLabel').style.color = s.color;
+  document.getElementById('sentScore').textContent = `Score: ${s.score} · Confidence: ${s.confidence}%`;
+
+  const posP = s.label === 'positive' ? Math.round(s.confidence * 0.85) : Math.round(Math.max(0, (s.score + 1) * 30));
+  const negP = s.label === 'negative' ? Math.round(s.confidence * 0.85) : Math.round(Math.max(0, (-s.score + 1) * 30));
+
+  setTimeout(() => {
+    document.getElementById('posBar').style.width = posP + '%';
+    document.getElementById('negBar').style.width = negP + '%';
+    document.getElementById('confBar').style.width = s.confidence + '%';
+    document.getElementById('posVal').textContent = posP + '%';
+    document.getElementById('negVal').textContent = negP + '%';
+    document.getElementById('confVal').textContent = s.confidence + '%';
+  }, 50);
+
+  document.getElementById('topicChips').innerHTML = d.topics.length
+    ? d.topics.map(t => `<span class="topic-chip">${t.topic} <span style="opacity:.6">${t.relevance}%</span></span>`).join('')
+    : '<span style="color:var(--text3);font-size:13px;">No specific topics detected</span>';
+
+  document.getElementById('keyphrases').innerHTML = d.key_phrases.length
+    ? d.key_phrases.map(k => `<span class="kp-tag">${k}</span>`).join('')
+    : '<span style="color:var(--text3);font-size:13px;">—</span>';
+
+  document.getElementById('wordCountEl').textContent = d.word_count;
+  document.getElementById('readabilityEl').textContent = d.readability_score;
+  document.getElementById('ageLevelEl').textContent = d.age_level;
+
+  document.getElementById('posKeywords').textContent = s.keywords_positive.length ? s.keywords_positive.join(', ') : 'None detected';
+  document.getElementById('negKeywords').textContent = s.keywords_negative.length ? s.keywords_negative.join(', ') : 'None detected';
+}
+
+function addToHistory(d) {
+  sessionHistory.unshift(d);
+  const log = document.getElementById('historyLog');
+  log.innerHTML = sessionHistory.slice(0,5).map(item => `
+    <div class="log-item" style="margin-bottom:8px;">
+      <div class="log-emoji">${item.sentiment.emoji}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
+          <span class="log-badge ${item.sentiment.label}">${item.sentiment.label}</span>
+          <span class="log-score">${item.sentiment.score}</span>
+        </div>
+        <div class="log-preview">${item.text_preview}</div>
+      </div>
+    </div>
+  `).join('');
+}
+</script>
+{% endblock %}

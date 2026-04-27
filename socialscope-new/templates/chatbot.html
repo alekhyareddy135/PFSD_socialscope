@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+{% block title %}Sage — Wellness AI{% endblock %}
+{% block content %}
+<section class="section" style="padding-top:140px;padding-bottom:40px;">
+  <div class="container" style="max-width:780px;">
+    <div class="anim-fade text-center" style="margin-bottom:32px;">
+      <span class="tag tag-cyan" style="margin-bottom:16px;">🤖 SAGE AI</span>
+      <h1 class="section-title">Meet Sage</h1>
+      <p class="section-desc">Your personal wellness companion. Share how you feel — Sage listens, responds, and offers support with breathing exercises, music suggestions, and motivation.</p>
+    </div>
+
+    <!-- Chat Container -->
+    <div class="card anim-fade" style="padding:0;overflow:hidden;">
+      <!-- Chat Header -->
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;gap:12px;">
+        <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--purple));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🌿</div>
+        <div>
+          <div style="font-weight:700;font-size:15px;">Sage</div>
+          <div style="font-size:12px;color:var(--green);display:flex;align-items:center;gap:4px;">
+            <span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse-badge 2s infinite;"></span>
+            Online — Ready to help
+          </div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:8px;">
+          <button class="btn btn-sm" onclick="clearChat()" style="font-size:11px;opacity:.7;">🗑 Clear</button>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div id="chatMessages" style="height:440px;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px;scroll-behavior:smooth;">
+      </div>
+
+      <!-- Quick Reply Chips -->
+      <div id="quickReplies" style="padding:10px 16px;display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid var(--border);background:var(--surface2);">
+        <span style="font-size:11px;color:var(--text3);align-self:center;white-space:nowrap;">Try:</span>
+        <button class="chip-btn" onclick="sendQuick('I am feeling stressed')">😓 Stressed</button>
+        <button class="chip-btn" onclick="sendQuick('I am feeling anxious')">😰 Anxious</button>
+        <button class="chip-btn" onclick="sendQuick('I am feeling sad')">😢 Sad</button>
+        <button class="chip-btn" onclick="sendQuick('Give me a breathing exercise')">🌬️ Breathing</button>
+        <button class="chip-btn" onclick="sendQuick('Give me a motivational quote')">✨ Quote</button>
+        <button class="chip-btn" onclick="sendQuick('I am feeling happy today')">😊 Happy</button>
+        <button class="chip-btn" onclick="sendQuick('Suggest some music for me')">🎵 Music</button>
+        <button class="chip-btn" onclick="sendQuick('What can you do for me')">❓ Help</button>
+      </div>
+
+      <!-- Input Area -->
+      <div style="padding:14px 16px;border-top:1px solid var(--border);display:flex;gap:10px;align-items:center;">
+        <input type="text" id="msgInput" placeholder="Type how you're feeling... (Press Enter to send)"
+          style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:border-color .2s;"
+          onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();sendMessage();}"
+          onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='var(--border)'">
+        <button class="btn btn-primary" onclick="sendMessage()" id="sendBtn" style="padding:11px 20px;white-space:nowrap;">Send →</button>
+      </div>
+    </div>
+
+    <!-- Info Grid -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-top:20px;">
+      <div class="card anim-fade" style="padding:16px;text-align:center;">
+        <div style="font-size:26px;margin-bottom:8px;">💙</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Empathetic Listening</div>
+        <div style="font-size:12px;color:var(--text2);">Responds to how you actually feel</div>
+      </div>
+      <div class="card anim-fade" style="padding:16px;text-align:center;">
+        <div style="font-size:26px;margin-bottom:8px;">🌬️</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Breathing Exercises</div>
+        <div style="font-size:12px;color:var(--text2);">Guided techniques for stress & anxiety</div>
+      </div>
+      <div class="card anim-fade" style="padding:16px;text-align:center;">
+        <div style="font-size:26px;margin-bottom:8px;">🎵</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Music Suggestions</div>
+        <div style="font-size:12px;color:var(--text2);">Curated playlists for your mood</div>
+      </div>
+      <div class="card anim-fade" style="padding:16px;text-align:center;">
+        <div style="font-size:26px;margin-bottom:8px;">🔒</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Private & Safe</div>
+        <div style="font-size:12px;color:var(--text2);">Conversations are confidential</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px;padding:14px 20px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);">
+      <p style="font-size:13px;color:var(--text2);margin:0;">⚠️ <strong>Important:</strong> Sage is a supportive tool, not a licensed therapist. If you're experiencing serious mental health challenges, please reach out to a trusted adult, counselor, or helpline: <strong>iCall: 9152987821</strong> | <strong>Vandrevala: 1860-2662-345</strong></p>
+    </div>
+  </div>
+</section>
+
+<style>
+.chip-btn {
+  padding:5px 11px;border-radius:20px;border:1px solid var(--border);
+  background:var(--surface);color:var(--text2);font-size:12px;cursor:pointer;
+  transition:all .2s;font-family:inherit;white-space:nowrap;
+}
+.chip-btn:hover { border-color:var(--cyan);color:var(--cyan);background:rgba(0,245,212,.06); }
+
+.msg-user {
+  max-width:78%;padding:11px 16px;border-radius:18px;border-bottom-right-radius:4px;
+  font-size:14px;line-height:1.6;word-break:break-word;
+  background:linear-gradient(135deg,var(--cyan),rgba(0,200,160,.9));color:#000;
+  margin-left:auto;
+}
+.msg-bot {
+  max-width:82%;padding:12px 16px;border-radius:18px;border-bottom-left-radius:4px;
+  font-size:14px;line-height:1.75;word-break:break-word;
+  background:var(--surface2);color:var(--text);
+}
+.msg-bot-wrap { display:flex;gap:10px;align-items:flex-end; }
+.bot-avatar {
+  width:32px;height:32px;border-radius:50%;
+  background:linear-gradient(135deg,var(--cyan),var(--purple));
+  display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;
+}
+.typing-dot {
+  width:8px;height:8px;border-radius:50%;background:var(--text3);display:inline-block;
+  animation:typingPulse .8s infinite ease-in-out;
+}
+.typing-dot:nth-child(2) { animation-delay:.15s; }
+.typing-dot:nth-child(3) { animation-delay:.3s; }
+@keyframes typingPulse { 0%,60%,100%{transform:translateY(0);opacity:.4} 30%{transform:translateY(-5px);opacity:1} }
+.msg-bot strong { color:var(--cyan); }
+</style>
+
+<script>
+const chatEl = document.getElementById('chatMessages');
+let isTyping = false;
+
+function escHtml(text) {
+  return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function formatBotText(text) {
+  // Convert **bold** to <strong>
+  let formatted = escHtml(text);
+  formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // Convert newlines to <br>
+  formatted = formatted.replace(/\n/g, '<br>');
+  return formatted;
+}
+
+function addMessage(text, sender='bot') {
+  const wrap = document.createElement('div');
+  if (sender === 'user') {
+    wrap.style.cssText = 'display:flex;justify-content:flex-end;';
+    wrap.innerHTML = `<div class="msg-user">${escHtml(text)}</div>`;
+  } else {
+    wrap.classList.add('msg-bot-wrap');
+    wrap.innerHTML = `<div class="bot-avatar">🌿</div><div class="msg-bot">${formatBotText(text)}</div>`;
+  }
+  chatEl.appendChild(wrap);
+  chatEl.scrollTop = chatEl.scrollHeight;
+  return wrap;
+}
+
+function showTyping() {
+  if (isTyping) return;
+  isTyping = true;
+  const el = document.createElement('div');
+  el.id = 'typingIndicator';
+  el.classList.add('msg-bot-wrap');
+  el.innerHTML = `<div class="bot-avatar">🌿</div><div class="msg-bot" style="padding:10px 16px;">
+    <span class="typing-dot"></span>
+    <span class="typing-dot"></span>
+    <span class="typing-dot"></span>
+  </div>`;
+  chatEl.appendChild(el);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+function removeTyping() {
+  const el = document.getElementById('typingIndicator');
+  if (el) el.remove();
+  isTyping = false;
+}
+
+async function sendMessage() {
+  const inp = document.getElementById('msgInput');
+  const text = inp.value.trim();
+  if (!text || document.getElementById('sendBtn').disabled) return;
+
+  addMessage(text, 'user');
+  inp.value = '';
+  document.getElementById('sendBtn').disabled = true;
+  showTyping();
+
+  // Simulate slight delay for natural feel (300-700ms)
+  const delay = 400 + Math.random() * 400;
+
+  try {
+    const res = await fetch('/api/chatbot', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message: text})
+    });
+    const data = await res.json();
+    await new Promise(r => setTimeout(r, delay));
+    removeTyping();
+    if (data.error) {
+      addMessage("I'm having a little trouble right now 💙. Please try again in a moment.", 'bot');
+    } else {
+      addMessage(data.reply || "I'm here with you 💙", 'bot');
+    }
+  } catch(e) {
+    await new Promise(r => setTimeout(r, delay));
+    removeTyping();
+    addMessage("I'm here for you 💙. It seems there's a connection issue — but you matter. Try refreshing if this continues.", 'bot');
+  } finally {
+    document.getElementById('sendBtn').disabled = false;
+    inp.focus();
+  }
+}
+
+function sendQuick(msg) {
+  const inp = document.getElementById('msgInput');
+  inp.value = msg;
+  sendMessage();
+}
+
+function clearChat() {
+  chatEl.innerHTML = '';
+  addMessage("Hey there! 👋 I'm Sage, your wellness companion.\n\nI'm here to listen, offer breathing exercises, music suggestions, and motivation. How are you feeling today?", 'bot');
+}
+
+// Initial greeting
+addMessage("Hey there! 👋 I'm Sage, your wellness companion.\n\nI'm here to listen, offer breathing exercises, music suggestions, and motivation. How are you feeling today?", 'bot');
+
+// Focus input
+document.getElementById('msgInput').focus();
+</script>
+{% endblock %}

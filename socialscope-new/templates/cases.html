@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Case Studies{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container page-hero-content">
+    <div class="overline">Real-World Evidence</div>
+    <h1>Case <span style="color:var(--cyan);">Studies</span></h1>
+    <p>Six documented real-world cases illustrating the spectrum of social media's influence on young people — from corporate scandal to life-saving communities.</p>
+  </div>
+</div>
+<div class="container" style="padding-bottom:80px;">
+  <div class="cases-grid">
+    {% for case in [
+      ('neg','🪞','Instagram & teen body image — the internal scandal',
+       "In 2021, the Wall Street Journal revealed internal Facebook research confirming that Instagram worsens body image for approximately 1 in 3 teen girls. The company had known for years but continued marketing to adolescents.",
+       "The internal slides read: 'We make body image issues worse for one in three teen girls.' Among teens who felt 'not pretty,' 40% said the feeling began on Instagram. The algorithm actively amplified appearance-focused content, creating a harmful feedback loop.",
+       "The revelations led to U.S. Senate hearings and EU regulatory investigations. Facebook's response — offering a 'hide likes' feature — was widely criticised as wholly insufficient.",
+       "32% of teen girls said Instagram made their body image worse when they already felt bad",
+       "Wall Street Journal / Facebook internal documents (2021). U.S. Senate Commerce Committee testimony."),
+
+      ('pos','🏳️‍🌈','TikTok as a lifeline for LGBTQ+ youth',
+       "For LGBTQ+ teenagers — particularly those in unsupportive households or rural communities — platforms like TikTok and YouTube have become critical spaces for identity validation and community belonging.",
+       "A 2022 UCLA School of Law study found that LGBTQ+ youth who had access to affirming online communities showed significantly lower rates of depression, suicidal ideation, and self-harm compared to those without such access.",
+       "Hashtags like #QueerTikTok provided safe spaces to share experiences, ask questions, and receive peer validation at a time when no offline equivalent existed for these young people.",
+       "LGBTQ+ teens with affirming online communities had 40% lower loneliness and were 3× more likely to seek professional support",
+       "UCLA Williams Institute (2022). Trevor Project National Survey on LGBTQ Youth Mental Health (2022)."),
+
+      ('neg','🌙','Late-night scrolling and the teen sleep crisis',
+       "A landmark RCPCH study tracking 12,000 adolescents over four years found a robust, dose-dependent relationship between late-night social media use and sleep disruption. Teens using devices after 10 PM consistently lost 1–2 hours of sleep per night.",
+       "The mechanisms are multiple: blue light suppresses melatonin; social comparison anxiety raises cortisol; notification alerts trigger micro-arousals. Each independently delays sleep onset and reduces restorative slow-wave sleep.",
+       "Chronic sleep deprivation during puberty disrupts hormonal regulation, cognitive consolidation, immune function, and emotional processing. The NHS now recommends device-free bedrooms for all under-18s.",
+       "Teens with regular late-night phone use showed 58% higher rate of depression diagnoses over 4 years",
+       "Royal College of Paediatrics and Child Health (2019). NHS Digital, Mental Health of Children and Young People (2022)."),
+
+      ('mix','🦠','Social media during COVID-19 lockdowns',
+       "The 2020–2021 lockdowns created a natural experiment: with schools closed, social media became the primary social infrastructure for an entire generation simultaneously.",
+       "Oxford Internet Institute longitudinal data showed paradoxical outcomes: teens who used social media to actively maintain friendships maintained significantly better mental health than those who passively consumed content alone.",
+       "Conversely, news overload and misinformation caused measurable anxiety amplification. The study most compellingly validated the active/passive use distinction of any prior research.",
+       "Active users maintained 68% of normal wellbeing; passive consumers fell to 39% — use type was the decisive factor",
+       "Oxford Internet Institute (2021). Przybylski & Orben, Royal Society Open Science."),
+
+      ('pos','📚','YouTube and the democratisation of learning',
+       "YouTube has become the world's largest informal education platform. In countries with under-resourced school systems, educational channels have measurably improved outcomes for millions of students.",
+       "A 2021 Harvard Graduate School of Education study found students who supplemented learning with targeted YouTube content scored 18% higher on standardised maths assessments — with the largest effect among the lowest-income students.",
+       "In India, YouTube channels in local languages teaching engineering and medicine have enabled first-generation university students to prepare for competitive examinations previously accessible only through expensive private coaching.",
+       "Low-income students show up to 23% improvement in targeted assessments after using educational YouTube content",
+       "Harvard Graduate School of Education (2021). Pew Research Center, 'How Teens Navigate School During COVID-19' (2020)."),
+
+      ('neg','🤖','TikTok\'s algorithm and vulnerable teens',
+       "In 2022, the Centre for Countering Digital Hate created new TikTok accounts registered as 13-year-olds expressing interest in weight loss. Within 30 minutes, the algorithm began recommending pro-eating-disorder content.",
+       "TikTok's 'For You' algorithm optimises for engagement, which means emotionally provocative content — including content that triggers body anxiety — is systematically amplified regardless of whether the user searched for it.",
+       "This led to a £12.7M ICO fine in 2023 and multiple U.S. state lawsuits against ByteDance, specifically citing algorithmic harm to minors as the central allegation.",
+       "A new account can be led to eating disorder communities within 2.6 minutes of expressing interest in 'diet' content",
+       "Centre for Countering Digital Hate (2022), 'Deadly by Design.' UK ICO enforcement notice against TikTok (2023).")
+    ] %}
+    <div class="case-card anim-fade">
+      <div class="case-header">
+        <span class="case-type {{ case[0] }}">{{ case[1] }} {{ 'Positive' if case[0]=='pos' else 'Negative' if case[0]=='neg' else 'Mixed' }}</span>
+        <h3>{{ case[2] }}</h3>
+      </div>
+      <div class="case-body">
+        <p>{{ case[3] }}</p>
+        <p>{{ case[4] }}</p>
+        <p>{{ case[5] }}</p>
+        <div class="case-hl {{ case[0] }}">📊 {{ case[6] }}</div>
+        <div class="case-src">Source: {{ case[7] }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
